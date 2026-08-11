@@ -32,6 +32,19 @@ static func export_stl(shape: BdgShape, path: String, tolerance: float = 0.1, an
 	f.close()
 	return true
 
+## Import an STL file (ASCII or binary) as a reference Face.
+## The result is a mesh-based face, suitable for viewing or meshing,
+## not for CAD boolean editing.
+## Returns null on failure.
+static func import_stl(path: String) -> BdgShape:
+	var tri := OcgRWStl.read_file_D(path, OcgMessageProgressRange.new())
+	if tri == null:
+		return null
+	var face := OcgTopoDSFace.new()
+	var builder := OcgBRepBuilder.new()
+	builder.make_face_U(face, tri)
+	return BdgShape.cast(face)
+
 ## Export a shape as a binary STL file.
 ## Returns true on success.
 static func export_stl_binary(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 10.0) -> bool:

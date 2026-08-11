@@ -288,3 +288,10 @@ func _test_meshing() -> void:
 		var count := fb.get_32()
 		_check(count == triangles.size() / 3, "binary stl triangle count %d" % count)
 		fb.close()
+
+	var imported := BdgIO.import_stl(bin_path)
+	_check(imported != null, "import_stl reads binary")
+	if imported:
+		_check(imported.faces().size() > 0, "imported stl has faces (%d)" % imported.faces().size())
+	var imported_ascii := BdgIO.import_stl(path)
+	_check(imported_ascii != null, "import_stl reads ascii")
