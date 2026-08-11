@@ -148,6 +148,151 @@ static func combine(edges: Array) -> Array:
 			wires.append(BdgWire.new(w))
 	return wires
 
+## 2D fillet of planar wire corners (straight-line edges only).
+## vertices: Array of Vector3 (or BdgVertex) corners to fillet; empty = all corners.
+## Returns a new BdgWire (or self if nothing to do / on error).
+func fillet_2d(radius: float, vertices: Array = [], plane: BdgPlane = null) -> BdgWire:
+	if radius <= 0.0:
+		push_error("fillet_2d radius must be positive")
+		return self
+	var chain := _ordered_points_edges()
+	var pts: Array = chain[0]
+	var es: Array = chain[1]
+	if pts.size() < 3:
+		push_error("fillet_2d needs at least a 3-corner wire")
+		return self
+	if plane == null:
+		plane = _fit_plane(pts)
+	var n := pts.size()
+	var is_loop := es.size() == n
+
+	var fillet_flags := {}
+	if vertices.is_empty():
+		for i in n:
+			fillet_flags[i] = true
+	else:
+		for v in vertices:
+			var vp: Vector3 = v if v is Vector3 else v.center()
+			var idx := -1
+			var best_d := 1e9
+			for i in n:
+				var d: float = pts[i].distance_to(vp)
+				if d < best_d:
+					best_d = d
+					idx = i
+			if idx >= 0 and best_d < 1e-3:
+				fillet_flags[idx] = true
+	if not is_loop:
+		fillet_flags.erase(0)
+		fillet_flags.erase(n - 1)
+
+	var t1 := {}
+	var t2 := {}
+	var arc_edges: Array = []
+	for i in n:
+		if not fillet_flags.has(i):
+			continue
+		# open wires: only interior points are real corners
+		if not is_loop and (i == 0 or i == n - 1):
+			continue
+		var prev: Vector3 = pts[(i - 1 + n) % n] if is_loop else pts[i - 1]
+		var cur: Vector3 = pts[i]
+		var nxt: Vector3 = pts[(i + 1) % n] if is_loop else pts[i + 1]
+		var e_prev: BdgEdge = es[(i - 1 + n) % n] if is_loop else es[i - 1]
+		var e_next: BdgEdge = es[i]
+		if e_prev.geom_type() != BdgEnums.GeomType.LINE or e_next.geom_type() != BdgEnums.GeomType.LINE:
+			push_warning("fillet_2d only supports straight-line corners; skipping")
+			continue
+		var u1 := (cur - prev).normalized()
+		var u2 := (nxt - cur).normalized()
+		var phi := acos(clampf(-u1.dot(u2), -1.0, 1.0))
+		if phi < 1e-4:
+			continue
+		var half := phi / 2.0
+		var center := cur + (-u1 + u2).normalized() * (radius / sin(half))
+		var L := radius / tan(half)
+		var tp1 := cur - u1 * L
+		var tp2 := cur + u2 * L
+		t1[i] = tp1
+		t2[i] = tp2
+		var dx := plane.x_dir
+		var dy := plane.y_dir
+		var a1 := atan2((tp1 - center).dot(dy), (tp1 - center).dot(dx))
+		var a2 := atan2((tp2 - center).dot(dy), (tp2 - center).dot(dx))
+		var d := a2 - a1
+		while d > PI:
+			d -= 2.0 * PI
+		while d < -PI:
+			d += 2.0 * PI
+		if absf(d) < 1e-6:
+			continue
+		arc_edges.append(BdgEdge.make_center_arc(center, radius, rad_to_deg(a1), rad_to_deg(d), plane))
+
+	var seg_edges: Array = []
+	var seg_count := n if is_loop else n - 1
+	for i in seg_count:
+		var from_p: Vector3 = t2[i] if fillet_flags.has(i) else pts[i]
+		var to_p: Vector3 = t1[(i + 1) % n] if fillet_flags.has((i + 1) % n) else pts[(i + 1) % n]
+		if from_p.distance_to(to_p) > 1e-7:
+			seg_edges.append(BdgEdge.make_line(from_p, to_p))
+
+	var all_edges := seg_edges + arc_edges
+	if all_edges.is_empty():
+		return self
+	var wires := BdgWire.combine(all_edges)
+	return wires[0] if not wires.is_empty() else self
+
+## Order the wire edges into a closed chain. Returns [points, edges] where
+## edges[i] runs exactly from points[i] to points[(i+1) % n].
+func _ordered_points_edges() -> Array:
+	var es := edges()
+	if es.is_empty():
+		return [[], []]
+	var start: BdgEdge = es[0]
+	var pts := [start.start_point(), start.end_point()]
+	var ordered := [start]
+	var remaining := es.slice(1)
+	var cur_end := start.end_point()
+	while not remaining.is_empty():
+		var found := false
+		for i in remaining.size():
+			var e: BdgEdge = remaining[i]
+			if _points_equal(e.start_point(), cur_end):
+				pts.append(e.end_point())
+				cur_end = e.end_point()
+				ordered.append(e)
+				remaining.remove_at(i)
+				found = true
+				break
+			elif _points_equal(e.end_point(), cur_end):
+				pts.append(e.start_point())
+				cur_end = e.start_point()
+				ordered.append(BdgEdge.new(e.reversed()._wrapped))
+				remaining.remove_at(i)
+				found = true
+				break
+		if not found:
+			break
+	if pts.size() > 1 and _points_equal(pts[0], pts[pts.size() - 1]):
+		pts.pop_back()
+	return [pts, ordered]
+
+## Fit a plane to the first non-collinear triple of points
+static func _fit_plane(pts: Array) -> BdgPlane:
+	var p0: Vector3 = pts[0]
+	for i in range(1, pts.size() - 1):
+		var a: Vector3 = pts[i] - p0
+		var b: Vector3 = pts[i + 1] - p0
+		var z: Vector3 = a.cross(b)
+		if z.length() > 1e-9:
+			var pl := BdgPlane.new()
+			pl.origin = p0
+			pl.x_dir = a.normalized()
+			pl.z_dir = z.normalized()
+			pl.y_dir = pl.z_dir.cross(pl.x_dir)
+			return pl
+	return BdgPlane.XY
+
 static func _points_equal(a: Vector3, b: Vector3) -> bool:
 	return a.distance_to(b) < 1e-6
 

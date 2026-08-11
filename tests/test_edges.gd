@@ -21,6 +21,7 @@ func _init():
 	_test_slots()
 	_test_objects()
 	_test_operations()
+	_test_fillet()
 	print("edges tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -182,5 +183,30 @@ func _test_operations() -> bool:
 
 	var op_rev := BdgOperations.revolve(profile, 180.0, BdgAxis.Z)
 	check(op_rev != null, "BdgOperations.revolve")
+
+	return failures == 0
+
+func _test_fillet() -> bool:
+	var wire := BdgWire.make_rect(10.0, 5.0)
+	var fw := wire.fillet_2d(1.0)
+	check(fw != null and fw.is_closed(), "fillet_2d stays closed")
+	if fw != null:
+		check(fw.edges().size() == 8, "fillet_2d all corners -> 8 edges (4 arcs + 4 lines)")
+		check(fw.length() < wire.length(), "fillet_2d shortens wire, %.3f vs %.3f" % [fw.length(), wire.length()])
+		var corners := fw.vertices()
+		check(corners.size() == 8, "filleted wire has 8 vertices")
+
+	var one := wire.fillet_2d(1.0, [Vector3(-5.0, -2.5, 0.0)])
+	check(one != null and one.edges().size() == 5, "single-corner fillet -> 5 edges")
+
+	var pl := BdgPlane.new()
+	pl.origin = Vector3(0.0, 0.0, 5.0)
+	var w3 := BdgWire.make_rect(10.0, 5.0, pl)
+	var fw3 := w3.fillet_2d(1.0)
+	check(fw3 != null and fw3.is_closed() and fw3.edges().size() == 8, "fillet_2d in offset plane")
+
+	var open := BdgWire.make_polygon([Vector3(0, 0, 0), Vector3(10, 0, 0), Vector3(10, 5, 0), Vector3(5, 5, 0)], false)
+	var fw4 := open.fillet_2d(1.0)
+	check(fw4 != null and not fw4.is_closed() and fw4.edges().size() == 5, "fillet_2d open wire -> 5 edges, stays open")
 
 	return failures == 0
