@@ -23,6 +23,7 @@ func _init():
 	_test_operations()
 	_test_fillet()
 	_test_bspline_loft()
+	_test_parabola_hyperbola()
 	_test_split_by_perimeter()
 	print("edges tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -210,6 +211,22 @@ func _test_fillet() -> bool:
 	var open := BdgWire.make_polygon([Vector3(0, 0, 0), Vector3(10, 0, 0), Vector3(10, 5, 0), Vector3(5, 5, 0)], false)
 	var fw4 := open.fillet_2d(1.0)
 	check(fw4 != null and not fw4.is_closed() and fw4.edges().size() == 5, "fillet_2d open wire -> 5 edges, stays open")
+
+	return failures == 0
+
+func _test_parabola_hyperbola() -> bool:
+	var p := BdgEdge.make_parabola(2.0)
+	check(p != null and not p.is_null(), "make_parabola creates edge")
+	if p != null:
+		check(p.geom_type() == BdgEnums.GeomType.PARABOLA, "parabola geom type")
+		var v: Vector3 = p.position_at(0.0)
+		check(v.distance_to(Vector3(0, 0, 0)) < 1e-3, "parabola starts at vertex, got %s" % v)
+	var h := BdgEdge.make_hyperbola(3.0, 2.0)
+	check(h != null and not h.is_null(), "make_hyperbola creates edge")
+	if h != null:
+		check(h.geom_type() == BdgEnums.GeomType.HYPERBOLA, "hyperbola geom type")
+	var hs := BdgEdge.make_hyperbola(3.0, 2.0, null, 45.0, 135.0)
+	check(hs != null and not hs.is_closed(), "partial hyperbola edge not closed")
 
 	return failures == 0
 

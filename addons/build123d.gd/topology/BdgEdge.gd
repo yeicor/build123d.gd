@@ -218,6 +218,60 @@ static func make_bspline(
 	var mk := OcgBRepBuilderAPIMakeEdge.from_5(spline)
 	return BdgEdge.new(mk.edge())
 
+## full or partial parabola in a plane centered at origin (angle in degrees)
+static func make_parabola(
+	focal_length: float,
+	plane: BdgPlane = null,
+	start_angle: float = 0.0,
+	end_angle: float = 90.0,
+	angular_direction: int = BdgEnums.AngularDirection.COUNTER_CLOCKWISE,
+) -> BdgEdge:
+	if plane == null:
+		plane = BdgPlane.XY
+	var parab := OcgGpParab.from_L(_plane_to_ax2(plane), focal_length)
+	var geom := OcgGCMakeArcOfParabola.from_v(
+		parab,
+		deg_to_rad(start_angle),
+		deg_to_rad(end_angle),
+		angular_direction == BdgEnums.AngularDirection.COUNTER_CLOCKWISE,
+	)
+	var mk := OcgBRepBuilderAPIMakeEdge.from_5(geom.value())
+	return BdgEdge.new(mk.edge())
+
+## full or partial hyperbola in a plane centered at origin (angle in degrees)
+static func make_hyperbola(
+	x_radius: float,
+	y_radius: float,
+	plane: BdgPlane = null,
+	start_angle: float = 360.0,
+	end_angle: float = 360.0,
+	angular_direction: int = BdgEnums.AngularDirection.COUNTER_CLOCKWISE,
+) -> BdgEdge:
+	if plane == null:
+		plane = BdgPlane.XY
+	var ax1 := OcgGpAx1.from_n(_plane_to_pnt(plane), _plane_to_dir(plane))
+	var hypr: OcgGpHypr
+	var correction_angle := 0.0
+	if y_radius > x_radius:
+		correction_angle = 90.0 * PI / 180.0
+		hypr = OcgGpHypr.from_l(_plane_to_ax2(plane), y_radius, x_radius)
+		hypr = hypr.rotated(ax1, correction_angle)
+	else:
+		hypr = OcgGpHypr.from_l(_plane_to_ax2(plane), x_radius, y_radius)
+	if is_equal_approx(start_angle, end_angle):
+		var mk := OcgBRepBuilderAPIMakeEdge.from_Q(hypr)
+		return BdgEdge.new(mk.edge())
+	var a1 := deg_to_rad(start_angle) - correction_angle
+	var a2 := deg_to_rad(end_angle) - correction_angle
+	var geom := OcgGCMakeArcOfHyperbola.from_n(
+		hypr,
+		a1,
+		a2,
+		angular_direction == BdgEnums.AngularDirection.COUNTER_CLOCKWISE,
+	)
+	var mk := OcgBRepBuilderAPIMakeEdge.from_5(geom.value())
+	return BdgEdge.new(mk.edge())
+
 ## full or partial ellipse in a plane (angle in degrees, CCW positive)
 static func make_ellipse(
 	x_radius: float,
