@@ -44,6 +44,12 @@ func is_valid() -> bool:
 	var chk := OcgBRepCheckAnalyzer.from_L(_wrapped, true, false, true)
 	return chk.is_valid_k()
 
+## Remove extraneous internal structure (returns self)
+func clean() -> BdgShape:
+	if _wrapped != null and not _wrapped.is_null():
+		OcgBRepTools.clean(_wrapped, true)
+	return self
+
 func is_same(other: BdgShape) -> bool:
 	if _wrapped == null or other._wrapped == null:
 		return false

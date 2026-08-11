@@ -24,6 +24,8 @@ enum Side { LEFT, RIGHT, BOTH }
 
 enum Mode { ADD, SUBTRACT, INTERSECT, REPLACE, PRIVATE }
 
+enum Select { ALL, LAST, NEW }
+
 enum Until { NEXT, LAST }
 
 enum LengthMode { NORMAL, RETRIEVED, CAD_OBJECT, BRIDGE }

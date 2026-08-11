@@ -7,6 +7,7 @@ const TAG := "BuildSketch"
 
 func _init() -> void:
 	_tag = TAG
+	_primary = "face"
 
 ## The built sketch.
 func sketch() -> BdgSketch:
@@ -16,42 +17,40 @@ func sketch() -> BdgSketch:
 		return BdgSketch.new(_obj.wrapped(), _obj.faces())
 	return null
 
-## All faces of the sketch.
-func faces() -> Array:
-	return [] if _obj == null else _obj.faces()
-
-## All edges of the sketch.
-func edges() -> Array:
-	return [] if _obj == null else _obj.edges()
-
 func _add_to_context(obj: BdgShape, mode: int) -> void:
-	var faces: Array = []
+	obj_before = _obj
+	to_combine = [obj]
+	var faces_in: Array = []
 	if obj is BdgCompound:
-		faces = obj.faces()
+		faces_in = obj.faces()
 	elif obj is BdgFace:
-		faces = [obj]
+		faces_in = [obj]
 	elif obj is BdgShape:
-		faces = obj.faces()
-	if faces.is_empty():
+		faces_in = obj.faces()
+	if faces_in.is_empty():
 		push_error("BdgBuildSketch: no faces to add")
+		return
+	if mode == BdgEnums.Mode.PRIVATE:
+		_track_op([], faces_in, [])
 		return
 	match mode:
 		BdgEnums.Mode.ADD:
 			if _obj == null:
-				_obj = faces[0] if faces.size() == 1 else faces[0].fuse_all(faces.slice(1))
+				_obj = faces_in[0] if faces_in.size() == 1 else faces_in[0].fuse_all(faces_in.slice(1))
 			else:
-				_obj = _obj.fuse_all(faces)
+				_obj = _obj.fuse_all(faces_in)
 		BdgEnums.Mode.SUBTRACT:
 			if _obj == null:
 				push_error("BdgBuildSketch: nothing to subtract from")
 				return
-			_obj = _obj.cut_all(faces)
+			_obj = _obj.cut_all(faces_in)
 		BdgEnums.Mode.INTERSECT:
 			if _obj == null:
 				push_error("BdgBuildSketch: nothing to intersect with")
 				return
-			_obj = _obj.intersect_all(faces)
+			_obj = _obj.intersect_all(faces_in)
 		BdgEnums.Mode.REPLACE:
-			_obj = BdgShape.make_compound_of(faces)
+			_obj = BdgShape.make_compound_of(faces_in)
 	if _obj != null and _obj is BdgCompound:
 		_obj = BdgSketch.new(_obj.wrapped(), _obj.faces())
+	_track_op([], faces_in, [])
