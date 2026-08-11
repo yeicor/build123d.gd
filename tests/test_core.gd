@@ -295,3 +295,11 @@ func _test_meshing() -> void:
 		_check(imported.faces().size() > 0, "imported stl has faces (%d)" % imported.faces().size())
 	var imported_ascii := BdgIO.import_stl(path)
 	_check(imported_ascii != null, "import_stl reads ascii")
+
+	var step_path := "/tmp/opencode/test_box.step"
+	_check(BdgIO.export_step(box, step_path), "export_step writes file")
+	if FileAccess.file_exists(step_path):
+		var fs := FileAccess.open(step_path, FileAccess.READ)
+		var step_head := fs.get_line()
+		_check(step_head.begins_with("ISO-10303-21"), "step header: %s" % step_head)
+		fs.close()

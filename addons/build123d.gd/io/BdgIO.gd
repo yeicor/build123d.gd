@@ -32,6 +32,33 @@ static func export_stl(shape: BdgShape, path: String, tolerance: float = 0.1, an
 	f.close()
 	return true
 
+## Export a shape as a STEP file (AP214 / ManifoldSolidBrep).
+## Returns true on success.
+static func export_step(shape: BdgShape, path: String) -> bool:
+	var session_reader := OcgXSControlReader.from_f("STEP")
+	if session_reader == null:
+		push_error("BdgIO.export_step: cannot create STEP session")
+		return false
+	var writer := OcgSTEPControlWriter.from_v(session_reader.ws(), true)
+	var mode := OcgEnums.STEPControl_StepModelType.STEPControl_ManifoldSolidBrep
+	var tstat: int = writer.transfer_z(shape.wrapped(), mode, false, OcgMessageProgressRange.new())
+	# A successful transfer reports RetDone (existing model) or RetVoid (new model).
+	if tstat != OcgEnums.IFSelect_ReturnStatus.IFSelect_RetDone and tstat != OcgEnums.IFSelect_ReturnStatus.IFSelect_RetVoid:
+		push_error("BdgIO.export_step: transfer failed with status %d" % tstat)
+		return false
+	var chunks: Array[String] = []
+	var sink := func(text: String) -> void:
+		chunks.append(text)
+	writer.write_stream(sink)
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		push_error("BdgIO.export_step: cannot open %s" % path)
+		return false
+	for chunk in chunks:
+		f.store_string(chunk)
+	f.close()
+	return true
+
 ## Import an STL file (ASCII or binary) as a reference Face.
 ## The result is a mesh-based face, suitable for viewing or meshing,
 ## not for CAD boolean editing.
