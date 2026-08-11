@@ -1,8 +1,7 @@
 extends RefCounted
 ## BdgIO - export/import of CAD files.
-## STL export is implemented directly on top of the BRepMesh tessellation
-## (no OCCT I/O wrappers required). STEP export needs the classic
-## STEPControl_Writer wrapper and is not yet available.
+## STL export uses the BRepMesh tessellation; STL import uses RWStl.
+## STEP export uses STEPControl_Writer; STEP import uses STEPCAFControl_Reader.
 class_name BdgIO
 
 ## Export a shape as an ASCII STL file.
@@ -71,6 +70,91 @@ static func import_stl(path: String) -> BdgShape:
 	var builder := OcgBRepBuilder.new()
 	builder.make_face_U(face, tri)
 	return BdgShape.cast(face)
+
+## Import a STEP file using the XCAF reader, preserving assemblies, names,
+## locations and colors. Returns a BdgShape (a BdgCompound for multi-root
+## files, the single root shape for single-root files). Null on failure.
+static func import_step(path: String) -> BdgShape:
+	var doc := OcgTDocStdDocument.from_d(OcgTCollectionExtendedString.from_j("XCAF"))
+	if doc == null:
+		push_error("BdgIO.import_step: cannot create XCAF document")
+		return null
+	var reader := OcgSTEPCAFControlReader.new()
+	reader.set_name_mode(true)
+	reader.set_color_mode(true)
+	reader.set_layer_mode(true)
+	var ok := reader.perform_t(OcgTCollectionAsciiString.from_a(path), doc, OcgMessageProgressRange.new())
+	if not ok:
+		push_error("BdgIO.import_step: failed to read %s" % path)
+		return null
+	var shape_tool := OcgXCAFDocDocumentTool.shape_tool(doc.main())
+	var color_tool := OcgXCAFDocDocumentTool.color_tool(doc.main())
+	var free := OcgNCollectionSequenceTDFLabel.new()
+	shape_tool.get_free_shapes(free)
+	var children := _step_assembly(shape_tool, color_tool, free)
+	if children.is_empty():
+		push_error("BdgIO.import_step: no shapes found in %s" % path)
+		return null
+	if children.size() == 1:
+		return children[0]
+	return BdgCompound.make_compound(children)
+
+static func _step_assembly(
+	shape_tool: OcgXCAFDocShapeTool,
+	color_tool: OcgXCAFDocColorTool,
+	labels: OcgNCollectionSequenceTDFLabel
+) -> Array:
+	var result: Array = []
+	for i in range(labels.length()):
+		var label: OcgTDFLabel = labels.value_T(i + 1)
+		var source := label
+		if OcgXCAFDocShapeTool.is_reference(label):
+			var ref := OcgTDFLabel.new()
+			if not OcgXCAFDocShapeTool.get_referred_shape(label, ref):
+				continue
+			source = ref
+		var shape: BdgShape = null
+		if OcgXCAFDocShapeTool.is_assembly(source):
+			var comp := OcgNCollectionSequenceTDFLabel.new()
+			shape_tool.get_components(source, comp, true)
+			shape = BdgCompound.make_compound(_step_assembly(shape_tool, color_tool, comp))
+		else:
+			var topo := OcgXCAFDocShapeTool.get_shape_A(source)
+			if topo == null or topo.is_null():
+				continue
+			shape = BdgShape.cast(topo)
+		var loc := OcgXCAFDocShapeTool.get_location(label)
+		if loc != null:
+			shape = shape.located(BdgLocation.new(loc))
+		shape.label = _step_label_name(label, source)
+		var color := _step_color(color_tool, shape)
+		if color != null:
+			shape._color = color
+		result.append(shape)
+	return result
+
+static func _step_label_name(label: OcgTDFLabel, source: OcgTDFLabel) -> String:
+	var attr := OcgTDataStdName.new()
+	var id := OcgTDataStdName.get_id()
+	if label.find_attribute_N(id, attr) and attr.get() != "":
+		return attr.get()
+	if not label.is_equal(source):
+		attr = OcgTDataStdName.new()
+		if source.find_attribute_N(id, attr) and attr.get() != "":
+			return attr.get()
+	return ""
+
+static func _step_color(color_tool: OcgXCAFDocColorTool, shape: BdgShape) -> BdgColor:
+	var rgba := OcgQuantityColorRGBA.new()
+	for t in [
+		OcgEnums.XCAFDoc_ColorType.XCAFDoc_ColorGen,
+		OcgEnums.XCAFDoc_ColorType.XCAFDoc_ColorSurf,
+		OcgEnums.XCAFDoc_ColorType.XCAFDoc_ColorCurv,
+	]:
+		if color_tool.get_color_r(shape._wrapped, t, rgba):
+			var rgb := rgba.get_rgb()
+			return BdgColor.new(Color(rgb.red(), rgb.green(), rgb.blue(), rgba.alpha()))
+	return null
 
 ## Export a shape as a binary STL file.
 ## Returns true on success.

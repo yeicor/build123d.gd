@@ -303,3 +303,11 @@ func _test_meshing() -> void:
 		var step_head := fs.get_line()
 		_check(step_head.begins_with("ISO-10303-21"), "step header: %s" % step_head)
 		fs.close()
+	var step_box := BdgIO.import_step(step_path)
+	_check(step_box != null, "import_step reads file")
+	if step_box:
+		var solids := step_box.solids()
+		_check(solids.size() > 0, "imported step has solids (%d)" % solids.size())
+		if not solids.is_empty():
+			var s: BdgSolid = solids[0]
+			_check(abs(s.volume() - 1000.0) < 1e-3, "imported step volume %.3f" % s.volume())
