@@ -62,6 +62,85 @@ static func make_three_point_arc(p1: Vector3, p2: Vector3, p3: Vector3) -> BdgEd
 	var mk := OcgBRepBuilderAPIMakeEdge.from_5(mkarc.value())
 	return BdgEdge.new(mk.edge())
 
+## center arc (numeric arc_size in degrees, positive = CCW)
+static func make_center_arc(
+	center: Vector3,
+	radius: float,
+	start_angle: float,
+	arc_size: float,
+	plane: BdgPlane = null,
+) -> BdgEdge:
+	if plane == null:
+		plane = BdgPlane.XY
+	if absf(arc_size) >= 360.0:
+		var plane2 := BdgPlane.new()
+		plane2.origin = center
+		plane2.x_dir = plane.x_dir
+		plane2.y_dir = plane.y_dir
+		plane2.z_dir = plane.z_dir
+		return make_circle(radius, plane2)
+	var ccw := arc_size >= 0.0
+	var a1 := deg_to_rad(start_angle)
+	var a2 := deg_to_rad(start_angle + arc_size)
+	var plane2 := BdgPlane.new()
+	plane2.origin = center
+	plane2.x_dir = plane.x_dir
+	plane2.y_dir = plane.y_dir
+	plane2.z_dir = plane.z_dir
+	var circ := OcgGpCirc.from_L(_plane_to_ax2(plane2), radius)
+	var sense := true
+	var alpha1 := a1
+	var alpha2 := a2
+	if ccw:
+		if alpha2 <= alpha1:
+			alpha2 += 2.0 * PI
+	else:
+		alpha1 = a2
+		alpha2 = a1
+		sense = false
+	var geom := OcgGCMakeArcOfCircle.from_Zi(circ, alpha1, alpha2, sense)
+	var mk := OcgBRepBuilderAPIMakeEdge.from_5(geom.value())
+	return BdgEdge.new(mk.edge())
+
+## radius arc: arc through two points with given radius
+static func make_radius_arc(
+	start_point: Vector3,
+	end_point: Vector3,
+	radius: float,
+	short_sagitta: bool = true,
+) -> BdgEdge:
+	var chord := end_point - start_point
+	var length := chord.length() / 2.0
+	var radius_abs := absf(radius)
+	if radius_abs * radius_abs < length * length:
+		push_error("Arc radius is not large enough to reach the end point")
+		return null
+	var sagitta: float
+	if short_sagitta:
+		sagitta = radius_abs - sqrt(radius_abs * radius_abs - length * length)
+	else:
+		sagitta = -radius_abs - sqrt(radius_abs * radius_abs - length * length)
+	if radius < 0.0:
+		sagitta = -sagitta
+	return make_sagitta_arc(start_point, end_point, sagitta)
+
+## sagitta arc: arc through two points with given sagitta (arc height from chord)
+static func make_sagitta_arc(
+	start_point: Vector3,
+	end_point: Vector3,
+	sagitta: float,
+) -> BdgEdge:
+	var mid_point := (end_point + start_point) * 0.5
+	var chord_dir := (end_point - start_point).normalized()
+	var sag_vector := chord_dir * absf(sagitta)
+	var perp := Vector3.UP if absf(chord_dir.y) < 0.999 else Vector3.RIGHT
+	var rot_axis := chord_dir.cross(perp).normalized()
+	var sign := 1.0 if sagitta > 0.0 else -1.0
+	var sag_point := mid_point + sag_vector.rotated(rot_axis, sign * PI / 2.0)
+	return make_three_point_arc(start_point, sag_point, end_point)
+
+## tangent arc
+
 ## tangent arc
 static func make_tangent_arc(p1: Vector3, tangent_dir: Vector3, p2: Vector3) -> BdgEdge:
 	var mkarc := OcgGCMakeArcOfCircle.from_k(
@@ -93,15 +172,84 @@ static func make_bezier(control_points: Array, weights: Array = []) -> BdgEdge:
 
 ## spline interpolating through points
 static func make_spline(points: Array) -> BdgEdge:
-	var pnts := OcgNCollectionHArray1GpPnt.from_k(1, points.size())
-	var arr := pnts.array1()
+	var arr := OcgNCollectionArray1GpPnt.from_k(1, points.size())
 	for i in points.size():
 		var p: Vector3 = points[i]
 		arr.set_value_v(i + 1, OcgGpPnt.from_6(p.x, p.y, p.z))
+	var pnts := OcgNCollectionHArray1GpPnt.from_w(arr)
 	var interp := OcgGeomAPIInterpolate.from_n(pnts, false, 1e-6)
 	interp.perform()
 	var mk := OcgBRepBuilderAPIMakeEdge.from_5(interp.curve())
 	return BdgEdge.new(mk.edge())
+
+## full or partial ellipse in a plane (angle in degrees, CCW positive)
+static func make_ellipse(
+	x_radius: float,
+	y_radius: float,
+	plane: BdgPlane = null,
+	start_angle: float = 360.0,
+	end_angle: float = 360.0,
+) -> BdgEdge:
+	if plane == null:
+		plane = BdgPlane.XY
+	var ax1 := OcgGpAx1.from_n(_plane_to_pnt(plane), _plane_to_dir(plane))
+	var correction_angle := 0.0
+	var ellipse_gp: OcgGpElips
+	if y_radius > x_radius:
+		correction_angle = 90.0 * PI / 180.0
+		ellipse_gp = OcgGpElips.from_l(_plane_to_ax2(plane), y_radius, x_radius)
+		ellipse_gp = ellipse_gp.rotated(ax1, correction_angle)
+	else:
+		ellipse_gp = OcgGpElips.from_l(_plane_to_ax2(plane), x_radius, y_radius)
+	if is_equal_approx(start_angle, end_angle):
+		var mk := OcgBRepBuilderAPIMakeEdge.from_y(ellipse_gp)
+		return BdgEdge.new(mk.edge())
+	else:
+		var a1 := deg_to_rad(start_angle) - correction_angle
+		var a2 := deg_to_rad(end_angle) - correction_angle
+		if a2 <= a1:
+			a2 += 2.0 * PI
+		var geom := OcgGCMakeArcOfEllipse.from_3(ellipse_gp, a1, a2, true)
+		var mk := OcgBRepBuilderAPIMakeEdge.from_5(geom.value())
+		return BdgEdge.new(mk.edge())
+
+## helix wrapped around a cylindrical (or conical when angle != 0) surface
+static func make_helix(
+	pitch: float,
+	height: float,
+	radius: float,
+	center: Vector3 = Vector3.ZERO,
+	normal: Vector3 = Vector3.BACK,
+	angle: float = 0.0,
+	lefthand: bool = false,
+) -> BdgEdge:
+	var ax3 := OcgGpAx3.from_S(_pnt(center), _dir(normal), OcgGpDir.from_6(1.0, 0.0, 0.0))
+	var surf: OcgGeomSurface
+	if is_zero_approx(angle):
+		surf = OcgGeomCylindricalSurface.from_O(ax3, radius)
+	else:
+		surf = OcgGeomConicalSurface.from_6(ax3, deg_to_rad(angle), radius)
+	var line_sign := -1.0 if lefthand else 1.0
+	var line_dir := Vector3(line_sign * 2.0 * PI, pitch, 0.0).normalized()
+	var line_len := (height / line_dir.y) / cos(deg_to_rad(angle))
+	var helix_line := OcgGeom2dLine.from_K(OcgGpPnt2d.new(), OcgGpDir2d.from_V(line_dir.x, line_dir.y))
+	var helix_curve := OcgGeom2dTrimmedCurve.from_S(helix_line, 0.0, line_len)
+	var mk := OcgBRepBuilderAPIMakeEdge.from_H(helix_curve, surf)
+	var edge := mk.edge()
+	OcgBRepLib.build_curves3d_5(edge, 1e-9, 14, 0)
+	return BdgEdge.new(edge)
+
+static func _plane_to_pnt(plane: BdgPlane) -> OcgGpPnt:
+	return OcgGpPnt.from_6(plane.origin.x, plane.origin.y, plane.origin.z)
+
+static func _plane_to_dir(plane: BdgPlane) -> OcgGpDir:
+	return OcgGpDir.from_6(plane.z_dir.x, plane.z_dir.y, plane.z_dir.z)
+
+static func _pnt(p: Vector3) -> OcgGpPnt:
+	return OcgGpPnt.from_6(p.x, p.y, p.z)
+
+static func _dir(d: Vector3) -> OcgGpDir:
+	return OcgGpDir.from_6(d.x, d.y, d.z)
 
 static func _plane_to_ax2(plane: BdgPlane) -> OcgGpAx2:
 	var pnt := OcgGpPnt.from_6(plane.origin.x, plane.origin.y, plane.origin.z)

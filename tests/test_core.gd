@@ -236,6 +236,23 @@ func _test_builders() -> void:
 	var ledges: Array = bl.edges()
 	_check(ledges.size() == 2, "line has 2 edges, got %d" % ledges.size())
 
+	var bla := BdgBuildLine.new()
+	bla.begin()
+	var ca := BdgCenterArc.new(Vector3(0.0, 0.0, 0.0), 10.0, 0.0, 90.0)
+	var lg1 := BdgLine.new(Vector3.ZERO, Vector3(10.0, 0.0, 0.0))
+	var lg2 := BdgLine.new(Vector3(0.0, 10.0, 0.0), Vector3(0.0, 0.0, 0.0))
+	bla.end()
+	var arc_edges: Array = bla.edges()
+	_check(arc_edges.size() == 3, "BuildLine center arc + lines edges %d" % arc_edges.size())
+
+	var bsk := BdgBuildSketch.new()
+	bsk.begin()
+	var slot := BdgSlotCenterToCenter.new(10.0, 4.0)
+	var hole := BdgCircle.new(1.0)
+	bsk.end()
+	var slot_sketch: BdgSketch = bsk.sketch()
+	_check(slot_sketch != null, "BuildSketch with slot produced a sketch")
+
 	var bp2 := BdgBuildPart.new()
 	bp2.begin()
 	var box2 := BdgBox.new(10.0, 10.0, 10.0)

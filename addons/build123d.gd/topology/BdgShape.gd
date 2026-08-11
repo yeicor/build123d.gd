@@ -60,6 +60,12 @@ func is_equal(other: BdgShape) -> bool:
 		return false
 	return _wrapped.is_equal(other._wrapped)
 
+## Reverse the orientation of the shape (returns a new BdgShape)
+func reversed() -> BdgShape:
+	if _wrapped == null or _wrapped.is_null():
+		return self
+	return BdgShape.cast(_wrapped.reversed())
+
 func area() -> float:
 	if is_null():
 		return 0.0
@@ -387,6 +393,109 @@ func cut_all(tools: Array) -> BdgShape:
 ## intersect with multiple tools at once
 func intersect_all(tools: Array) -> BdgShape:
 	return _bool_op([self], tools, "intersect")
+
+## Revolve this shape around an axis by angle_deg (360 = full). Returns a BdgShape.
+func revolve(angle_deg: float, axis: BdgAxis = BdgAxis.Z) -> BdgShape:
+	if is_null():
+		return self
+	var angle := deg_to_rad(angle_deg)
+	var gp_axis := OcgGpAx1.from_n(
+		OcgGpPnt.from_6(axis.position.x, axis.position.y, axis.position.z),
+		OcgGpDir.from_6(axis.direction.x, axis.direction.y, axis.direction.z),
+	)
+	var builder := OcgBRepPrimAPIMakeRevol.from_V(_wrapped, gp_axis, angle, false)
+	var result := builder.shape()
+	if result.shape_type() == BdgEnums.ShapeType.COMPSOLID:
+		var solids: Array = []
+		var explorer := OcgTopExpExplorer.from_4(result, int(BdgEnums.ShapeType.SOLID), int(BdgEnums.ShapeType.SHAPE))
+		while explorer.more():
+			solids.append(BdgShape.cast(explorer.current()))
+			explorer.next()
+		result = make_compound_of(solids)._wrapped
+	return BdgShape.cast(result)
+
+## Sweep this profile shape along a spine wire. Returns the swept shape.
+func sweep(spine: BdgWire, aux_spines: Array = [], is_frenet: bool = false) -> BdgShape:
+	if is_null():
+		return self
+	if aux_spines.is_empty():
+		var trihedron := OcgEnums.GeomFill_Trihedron.GeomFill_IsFrenet if is_frenet else OcgEnums.GeomFill_Trihedron.GeomFill_IsCorrectedFrenet
+		var pipe := OcgBRepOffsetAPIMakePipe.from_1(spine._wrapped, _wrapped, trihedron, false)
+		var result := pipe.shape()
+		return BdgShape.cast(_unwrap_compound(result))
+	var pshell := OcgBRepOffsetAPIMakePipeShell.from_I(spine._wrapped)
+	pshell.set_mode_c(is_frenet)
+	pshell.add_T(_wrapped)
+	for s in aux_spines:
+		if s is BdgWire:
+			pshell.set_mode_g(s._wrapped, true, OcgEnums.BRepFill_TypeOfContact.BRepFill_NoContact)
+			pshell.add_T(_wrapped)
+	pshell.build(null)
+	var result: BdgShape = BdgShape.cast(_unwrap_compound(pshell.shape()))
+	var shell := _shape_of_type(result._wrapped, BdgEnums.ShapeType.SHELL)
+	if shell != null:
+		var faces: Array = shell.faces()
+		result = BdgShape.make_compound_of(faces)
+	return result
+
+## Thicken a face (or shell) outward by amount (negative = inward). Returns a BdgShape.
+func thicken(amount: float) -> BdgShape:
+	if is_null():
+		return self
+	var thick := OcgBRepOffsetAPIMakeThickSolid.new()
+	thick.make_thick_solid_by_simple(_wrapped, amount)
+	thick.build(null)
+	if not thick.is_done():
+		push_error("BdgShape.thicken failed")
+		return null
+	return BdgShape.cast(_unwrap_compound(thick.shape()))
+
+## World coord section of this shape with a plane. Returns edges (array of BdgEdge).
+func section(plane: BdgPlane = null) -> Array:
+	if is_null():
+		return []
+	if plane == null:
+		plane = BdgPlane.XY
+	var pln := OcgGpPln.from_k(OcgGpAx3.from_v(_plane_to_ax2(plane)))
+	var sectioner := OcgBRepAlgoAPISection.from_M(_wrapped, pln, true)
+	var result := sectioner.shape()
+	var edges: Array = []
+	var explorer := OcgTopExpExplorer.from_4(result, int(BdgEnums.ShapeType.EDGE), int(BdgEnums.ShapeType.SHAPE))
+	while explorer.more():
+		edges.append(BdgShape.cast(explorer.current()))
+		explorer.next()
+	return edges
+
+func _unwrap_compound(shape: OcgTopoDSShape) -> OcgTopoDSShape:
+	if shape.shape_type() == BdgEnums.ShapeType.COMPOUND:
+		var solids: Array = []
+		var explorer := OcgTopExpExplorer.from_4(shape, int(BdgEnums.ShapeType.SOLID), int(BdgEnums.ShapeType.SHAPE))
+		while explorer.more():
+			solids.append(BdgShape.cast(explorer.current()))
+			explorer.next()
+		if not solids.is_empty():
+			return make_compound_of(solids)._wrapped
+		var faces: Array = []
+		explorer = OcgTopExpExplorer.from_4(shape, int(BdgEnums.ShapeType.FACE), int(BdgEnums.ShapeType.SHAPE))
+		while explorer.more():
+			faces.append(BdgShape.cast(explorer.current()))
+			explorer.next()
+		if not faces.is_empty():
+			return make_compound_of(faces)._wrapped
+	return shape
+
+func _shape_of_type(shape: OcgTopoDSShape, topo_type: int) -> BdgShape:
+	var explorer := OcgTopExpExplorer.from_4(shape, int(topo_type), int(BdgEnums.ShapeType.SHAPE))
+	while explorer.more():
+		var s := BdgShape.cast(explorer.current())
+		return s
+	return null
+
+static func _plane_to_ax2(plane: BdgPlane) -> OcgGpAx2:
+	var pnt := OcgGpPnt.from_6(plane.origin.x, plane.origin.y, plane.origin.z)
+	var n := OcgGpDir.from_6(plane.z_dir.x, plane.z_dir.y, plane.z_dir.z)
+	var vx := OcgGpDir.from_6(plane.x_dir.x, plane.x_dir.y, plane.x_dir.z)
+	return OcgGpAx2.from_S(pnt, n, vx)
 
 # ---------------------------------------------------------------------------
 # Entity extraction (vertices/edges/faces/...)
