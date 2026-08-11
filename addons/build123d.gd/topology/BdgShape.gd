@@ -466,6 +466,35 @@ func section(plane: BdgPlane = null) -> Array:
 		explorer.next()
 	return edges
 
+## Loft a shape (Solid if as_solid, else Shell) through wires/vertices sections.
+## objs: Array of BdgWire and/or BdgVertex (vertices only at the ends).
+static func make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -> BdgShape:
+	if objs.size() < 2:
+		push_error("make_loft needs at least two sections")
+		return null
+	var loft := OcgBRepOffsetAPIThruSections.from_R(as_solid, ruled, 1e-6)
+	for obj in objs:
+		if obj is BdgWire:
+			var tw := OcgTopoDSShape.cast_wire(obj._wrapped)
+			if tw == null:
+				push_error("make_loft: section is not a wire")
+				return null
+			loft.add_wire(tw)
+		elif obj is BdgVertex:
+			var tv := OcgTopoDSShape.cast_vertex(obj._wrapped)
+			if tv == null:
+				push_error("make_loft: apex is not a vertex")
+				return null
+			loft.add_vertex(tv)
+		else:
+			push_error("make_loft: unsupported object")
+			return null
+	loft.build(OcgMessageProgressRange.new())
+	if not loft.is_done():
+		push_error("make_loft failed")
+		return null
+	return BdgShape.cast(loft.shape())
+
 func _unwrap_compound(shape: OcgTopoDSShape) -> OcgTopoDSShape:
 	if shape.shape_type() == BdgEnums.ShapeType.COMPOUND:
 		var solids: Array = []

@@ -182,6 +182,42 @@ static func make_spline(points: Array) -> BdgEdge:
 	var mk := OcgBRepBuilderAPIMakeEdge.from_5(interp.curve())
 	return BdgEdge.new(mk.edge())
 
+## Create an exact B-spline edge from control points (poles) and knot data.
+## Repeated knot values are collapsed into multiplicities.
+static func make_bspline(
+	control_points: Array,
+	knots: Array,
+	degree: int = 3,
+	periodic: bool = false,
+) -> BdgEdge:
+	if knots.is_empty():
+		push_error("make_bspline needs at least one knot")
+		return null
+	var unique_knots: Array = [knots[0]]
+	var multiplicities: Array = [1]
+	for k in knots.slice(1):
+		if absf(float(k) - float(unique_knots[-1])) < 1e-6:
+			multiplicities[multiplicities.size() - 1] = int(multiplicities[multiplicities.size() - 1]) + 1
+		else:
+			unique_knots.append(k)
+			multiplicities.append(1)
+	var poles := OcgNCollectionArray1GpPnt.from_k(1, control_points.size())
+	for i in control_points.size():
+		var p: Vector3 = control_points[i]
+		poles.set_value_v(i + 1, OcgGpPnt.from_6(p.x, p.y, p.z))
+	var knots_arr := OcgNCollectionArray1Double.from_k(1, unique_knots.size())
+	for i in unique_knots.size():
+		knots_arr.set_value_N(i + 1, float(unique_knots[i]))
+	var mult_arr := OcgNCollectionArray1Int.from_k(1, multiplicities.size())
+	for i in multiplicities.size():
+		mult_arr.set_value_Z(i + 1, int(multiplicities[i]))
+	var spline := OcgGeomBSplineCurve.from_2(poles, knots_arr, mult_arr, degree, periodic)
+	if spline == null:
+		push_error("make_bspline failed to create spline geometry")
+		return null
+	var mk := OcgBRepBuilderAPIMakeEdge.from_5(spline)
+	return BdgEdge.new(mk.edge())
+
 ## full or partial ellipse in a plane (angle in degrees, CCW positive)
 static func make_ellipse(
 	x_radius: float,

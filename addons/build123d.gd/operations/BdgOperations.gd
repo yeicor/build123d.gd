@@ -166,3 +166,18 @@ static func section(shape: BdgShape, plane: BdgPlane = null) -> Array:
 	if shape == null:
 		return []
 	return shape.section(plane)
+
+## Loft a solid/shell through the given sections (wires and/or apex vertices).
+## Returns a BdgSolid. Integrates with the BuildPart context when active.
+static func loft(objs: Array, ruled: bool = false, mode: int = BdgEnums.Mode.ADD) -> BdgSolid:
+	var result: BdgShape = BdgShape.make_loft(objs, ruled, true)
+	if result == null:
+		return null
+	var solid: BdgSolid = result as BdgSolid
+	if solid == null:
+		push_error("BdgOperations.loft did not produce a solid")
+		return null
+	var result_part := BdgPart.new(BdgShape.make_compound_of([result]), [result])
+	if BdgBuilder.has_context(BdgBuildPart.TAG):
+		BdgBuilder.add_to_current(result_part, mode, BdgBuildPart.TAG)
+	return solid

@@ -22,6 +22,7 @@ func _init():
 	_test_objects()
 	_test_operations()
 	_test_fillet()
+	_test_bspline_loft()
 	print("edges tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -208,5 +209,35 @@ func _test_fillet() -> bool:
 	var open := BdgWire.make_polygon([Vector3(0, 0, 0), Vector3(10, 0, 0), Vector3(10, 5, 0), Vector3(5, 5, 0)], false)
 	var fw4 := open.fillet_2d(1.0)
 	check(fw4 != null and not fw4.is_closed() and fw4.edges().size() == 5, "fillet_2d open wire -> 5 edges, stays open")
+
+	return failures == 0
+
+func _test_bspline_loft() -> bool:
+	var b := BdgEdge.make_bspline(
+		[Vector3(0, 0, 0), Vector3(0, 5, 0), Vector3(5, 5, 0), Vector3(5, 0, 0)],
+		[0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+		3, false)
+	check(b != null and b.geom_type() == BdgEnums.GeomType.BSPLINE, "make_bspline creates bspline edge")
+	if b != null:
+		check(b.position_at(0.5).distance_to(Vector3(2.5, 3.75, 0)) < 1e-3, "bspline interpolates approx shape")
+
+	var wb := BdgWire.make_bspline(
+		[Vector3(0, 0, 0), Vector3(0, 5, 0), Vector3(5, 5, 0), Vector3(5, 0, 0)],
+		[0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+		3, false)
+	check(wb != null, "BdgWire.make_bspline creates wire")
+
+	var bottom := BdgWire.make_rect(10.0, 10.0).translate(Vector3(0, 0, 0)) as BdgWire
+	var top := BdgWire.make_rect(5.0, 5.0).translate(Vector3(0, 0, 20.0)) as BdgWire
+	var lofted := BdgSolid.make_loft([bottom, top])
+	check(lofted != null, "make_loft two rects")
+	if lofted != null:
+		var v: float = lofted.volume()
+		check(absf(v - 1166.6667) < 1.0, "loft frustum volume %.2f" % v)
+		var open_loft := BdgShape.make_loft([bottom, top], false, false)
+		check(open_loft != null and open_loft.solids().is_empty(), "shell loft produces no solids")
+
+	var apex := BdgSolid.make_loft([bottom, BdgVertex.make_vertex(Vector3(0, 0, 10.0))])
+	check(apex != null, "loft with apex vertex")
 
 	return failures == 0

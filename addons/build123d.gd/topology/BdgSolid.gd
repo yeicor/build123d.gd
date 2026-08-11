@@ -148,6 +148,15 @@ static func make_revolve(section: BdgFace, angle: float, axis: BdgAxis) -> BdgSo
 	var revol := OcgBRepPrimAPIMakeRevol.from_V(section._wrapped, axis.wrapped(), angle * DEG2RAD, true)
 	return BdgSolid.new(revol.shape())
 
+## Loft a solid through the given sections (wires) and optional apex vertices.
+## objs: Array of BdgWire and/or BdgVertex (vertices only at start/end).
+## ruled: smooth (false) or stepped/linear (true).
+static func make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -> BdgShape:
+	var result: BdgShape = BdgShape.make_loft(objs, ruled, true and as_solid)
+	if result == null:
+		return null
+	return result if result is BdgSolid else (result as BdgSolid)
+
 static func _first_ancestor_face(map: RefCounted, edge: OcgTopoDSEdge) -> OcgTopoDSFace:
 	var value := OcgNCollectionListTopoDSShape.new()
 	if map.find_from_key_d(edge, value):

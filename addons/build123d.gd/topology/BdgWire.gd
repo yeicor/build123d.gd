@@ -94,6 +94,15 @@ static func make_bezier(control_points: Array) -> BdgWire:
 	mk.add_g(e._wrapped)
 	return BdgWire.new(mk.wire())
 
+## Create a bspline wire from control points and knot data (see BdgEdge.make_bspline)
+static func make_bspline(control_points: Array, knots: Array, degree: int = 3, periodic: bool = false) -> BdgWire:
+	var e := BdgEdge.make_bspline(control_points, knots, degree, periodic)
+	if e == null:
+		return null
+	var mk := OcgBRepBuilderAPIMakeWire.new()
+	mk.add_g(e._wrapped)
+	return BdgWire.new(mk.wire())
+
 ## Create a helix wire (see BdgEdge.make_helix for arguments)
 static func make_helix(
 	pitch: float,

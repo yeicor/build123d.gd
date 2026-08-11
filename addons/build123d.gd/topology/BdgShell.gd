@@ -26,3 +26,7 @@ func center() -> Vector3:
 	var props := OcgGPropGProps.new()
 	OcgBRepGProp.surface_properties_q(_wrapped, props, true, false)
 	return BdgShape._gp_pnt_to_v3(props.centre_of_mass())
+
+## Loft a shell (open surface) through the given section wires.
+static func make_loft(objs: Array, ruled: bool = false, as_solid: bool = false) -> BdgShape:
+	return BdgShape.make_loft(objs, ruled, as_solid)
