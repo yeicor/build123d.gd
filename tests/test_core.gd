@@ -335,6 +335,19 @@ func _test_meshing() -> void:
 	var imported_ascii := BdgIO.import_stl(path)
 	_check(imported_ascii != null, "import_stl reads ascii")
 
+	var amesh := BdgMesh.to_array_mesh(box, 1.0, 30.0)
+	_check(amesh != null and amesh.get_surface_count() == 1, "to_array_mesh surface count %d" % (amesh.get_surface_count() if amesh else -1))
+	if amesh:
+		var arrays := amesh.surface_get_arrays(0)
+		var mesh_verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var mesh_tris: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		_check(mesh_verts.size() >= 8, "to_array_mesh vertices %d" % mesh_verts.size())
+		_check(mesh_tris.size() > 0 and mesh_tris.size() % 3 == 0, "to_array_mesh triangles %d" % mesh_tris.size())
+		var mesh_normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+		_check(mesh_normals.size() == mesh_verts.size(), "to_array_mesh normals %d" % mesh_normals.size())
+	var mi := BdgMesh.to_mesh_instance3d(box)
+	_check(mi is MeshInstance3D and mi.mesh != null, "to_mesh_instance3d creates node")
+
 	var step_path := "/tmp/opencode/test_box.step"
 	_check(BdgIO.export_step(box, step_path), "export_step writes file")
 	if FileAccess.file_exists(step_path):
