@@ -466,6 +466,82 @@ func section(plane: BdgPlane = null) -> Array:
 		explorer.next()
 	return edges
 
+## Split this shape's faces by a closed perimeter wire or edge.
+## keep: BdgEnums.Keep.INSIDE/OUTSIDE/BOTH. Returns the inside/outside part as a
+## BdgShape (or Array of BdgShape), or for BOTH an array [inside, outside].
+func split_by_perimeter(perimeter: Variant, keep: int = BdgEnums.Keep.INSIDE) -> Variant:
+	if is_null():
+		return null
+	if not (perimeter is BdgWire or perimeter is BdgEdge):
+		push_error("split_by_perimeter: perimeter must be a BdgWire or BdgEdge")
+		return null
+	if not perimeter.is_closed():
+		push_error("split_by_perimeter: perimeter must be closed")
+		return null
+	var p_wire: BdgWire = perimeter if perimeter is BdgWire else BdgWire.new([perimeter])
+	var seq := OcgNCollectionSequenceTopoDSShape.from_P(OcgNCollectionBaseAllocator.common_base_allocator())
+	for e in p_wire.edges():
+		seq.append_4(e._wrapped)
+	var splitter := OcgBRepFeatSplitShape.from_4(_wrapped)
+	if not splitter.add_B(seq):
+		push_error("split_by_perimeter: could not add perimeter")
+		return null
+	splitter.build(OcgMessageProgressRange.new())
+	if not splitter.is_done():
+		push_error("split_by_perimeter: split failed")
+		return null
+	var left: Variant = _process_split_sides(splitter.left())
+	var right: Variant = _process_split_sides(splitter.right())
+	var perimeter_length: float = p_wire.length()
+	var left_inside: bool = absf(perimeter_length - _boundary_length(left)) < absf(perimeter_length - _boundary_length(right))
+	if keep == BdgEnums.Keep.BOTH:
+		return [left if left_inside else right, right if left_inside else left]
+	if keep == BdgEnums.Keep.OUTSIDE:
+		return right if left_inside else left
+	return left if left_inside else right
+
+## Convert a SplitShape left/right list into a single shape (or null / Array).
+func _process_split_sides(list: OcgNCollectionListTopoDSShape) -> Variant:
+	var shapes: Array = []
+	var it := OcgNCollectionTListIteratorTopoDSShape.from_u(list)
+	while it.more():
+		var s := OcgTopoDSShape.cast(it.value_k())
+		var st := s.shape_type()
+		if st == BdgEnums.ShapeType.FACE or st == BdgEnums.ShapeType.SHELL:
+			shapes.append(s)
+		it.next()
+	if shapes.is_empty():
+		return null
+	if shapes.size() == 1:
+		return BdgShape.cast(shapes[0])
+	var sew := OcgBRepBuilderAPISewing.from_E(1e-6, true, true, true, false)
+	for s in shapes:
+		sew.add(s)
+	sew.perform(OcgMessageProgressRange.new())
+	var sewed := sew.sewed_shape()
+	if sewed.shape_type() == BdgEnums.ShapeType.SHELL:
+		return BdgShape.cast(sewed)
+	var out: Array = []
+	for s in shapes:
+		out.append(BdgShape.cast(s))
+	return out
+
+## Total boundary edge length of a split side (BdgShape or Array of BdgShape).
+func _boundary_length(side: Variant) -> float:
+	if side == null:
+		return 0.0
+	var total := 0.0
+	if side is Array:
+		for s in side:
+			total += _boundary_length(s)
+		return total
+	if side is BdgWire:
+		return side.length()
+	if side is BdgShape:
+		for e in side.edges():
+			total += e.length()
+	return total
+
 ## Loft a shape (Solid if as_solid, else Shell) through wires/vertices sections.
 ## objs: Array of BdgWire and/or BdgVertex (vertices only at the ends).
 static func make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -> BdgShape:

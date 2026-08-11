@@ -23,6 +23,7 @@ func _init():
 	_test_operations()
 	_test_fillet()
 	_test_bspline_loft()
+	_test_split_by_perimeter()
 	print("edges tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -239,5 +240,29 @@ func _test_bspline_loft() -> bool:
 
 	var apex := BdgSolid.make_loft([bottom, BdgVertex.make_vertex(Vector3(0, 0, 10.0))])
 	check(apex != null, "loft with apex vertex")
+
+	return failures == 0
+
+func _test_split_by_perimeter() -> bool:
+	var base := BdgFace.make_rect(10.0, 10.0) as BdgFace
+	var cutout := BdgWire.make_circle(2.0).translate(Vector3(0, 0, 0)) as BdgWire
+	var inside: Variant = base.split_by_perimeter(cutout, BdgEnums.Keep.INSIDE)
+	check(inside != null, "split_by_perimeter returns inside part")
+	if inside != null:
+		var area: float = inside.area() if inside is BdgShape else 0.0
+		check(absf(area - PI * 4.0) < 0.01, "inside part is disk, area %.4f" % area)
+	var outside: Variant = base.split_by_perimeter(cutout, BdgEnums.Keep.OUTSIDE)
+	check(outside != null, "split_by_perimeter returns outside part")
+	if outside != null:
+		var oarea: float = outside.area() if outside is BdgShape else 0.0
+		check(absf(oarea - (100.0 - PI * 4.0)) < 0.01, "outside part fills square, area %.4f" % oarea)
+	var pair: Variant = base.split_by_perimeter(cutout, BdgEnums.Keep.BOTH)
+	check(pair is Array and pair.size() == 2, "split_by_perimeter BOTH returns two parts")
+	if pair is Array and pair.size() == 2:
+		var total := 0.0
+		for p in pair:
+			if p is BdgShape:
+				total += p.area()
+		check(absf(total - 100.0) < 0.01, "inside+outside area sums to square, %.4f" % total)
 
 	return failures == 0
