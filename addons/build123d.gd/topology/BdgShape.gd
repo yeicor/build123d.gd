@@ -309,6 +309,37 @@ func _bool_op(args: Array, tools: Array, op_name: String) -> BdgShape:
 	_copy_attributes(result)
 	return result
 
+# ---------------------------------------------------------------------------
+# Meshing / tessellation
+# ---------------------------------------------------------------------------
+
+## Tessellate this shape into Godot-native vertex/triangle arrays.
+## Returns [vertices: PackedVector3Array, triangles: PackedInt32Array].
+## tolerance (linear) and angular_tolerance (degrees) control mesh density.
+func tessellate(tolerance: float = 0.1, angular_tolerance: float = 10.0) -> Array:
+	var mesh := OcgBRepMeshIncrementalMesh.from_z(
+		_wrapped, tolerance, false, deg_to_rad(angular_tolerance), false
+	)
+	mesh.perform_W(OcgMessageProgressRange.new())
+	var vertices := PackedVector3Array()
+	var triangles := PackedInt32Array()
+	for face in faces():
+		var loc := OcgTopLocLocation.new()
+		var tri := OcgBRepTool.triangulation(face._wrapped, loc, 0)
+		if tri == null:
+			continue
+		var trsf := loc.transformation()
+		var base := vertices.size()
+		for i in tri.nb_nodes():
+			var p := tri.node(i + 1).transformed(trsf)
+			vertices.append(Vector3(p.x(), p.y(), p.z()))
+		for t in tri.nb_triangles():
+			var tr := tri.triangle(t + 1)
+			triangles.append(base + tr.value(1) - 1)
+			triangles.append(base + tr.value(2) - 1)
+			triangles.append(base + tr.value(3) - 1)
+	return [vertices, triangles]
+
 static func _make_compound_topo(shapes: Array[OcgTopoDSShape]) -> OcgTopoDSShape:
 	if shapes.size() == 1:
 		return shapes[0]

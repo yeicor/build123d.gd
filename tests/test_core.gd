@@ -13,6 +13,7 @@ func _init():
 	_test_primitives()
 	_test_operations()
 	_test_builders()
+	_test_meshing()
 	print("---")
 	print("checks: %d, failures: %d" % [checks, failures])
 	quit()
@@ -255,3 +256,35 @@ func _test_builders() -> void:
 	bp3.end()
 	var part3: BdgPart = bp3.part()
 	_check(part3 != null and abs(part3.volume() - 500.0) < 1e-6, "extrude into BuildPart volume %.1f" % (part3.volume() if part3 else 0.0))
+
+func _test_meshing() -> void:
+	var box := BdgBox.new(10.0, 10.0, 10.0)
+	var tess := box.tessellate(1.0, 30.0)
+	var vertices: PackedVector3Array = tess[0]
+	var triangles: PackedInt32Array = tess[1]
+	_check(vertices.size() >= 8, "tessellate vertices %d" % vertices.size())
+	_check(triangles.size() >= 36 and triangles.size() % 3 == 0, "tessellate triangles %d" % triangles.size())
+	for i in triangles.size():
+		var idx := triangles[i]
+		_check(idx >= 0 and idx < vertices.size(), "triangle index in range")
+		if idx < 0 or idx >= vertices.size():
+			break
+
+	var path := "user://test_box.stl"
+	_check(BdgIO.export_stl(box, path), "export_stl writes file")
+	var f := FileAccess.open(path, FileAccess.READ)
+	_check(f != null, "stl file readable")
+	if f:
+		var content := f.get_as_text()
+		_check(content.begins_with("solid build123d"), "stl header")
+		_check(content.contains("facet normal"), "stl facets")
+		_check(content.contains("endsolid build123d"), "stl footer")
+		f.close()
+	var bin_path := "user://test_box_bin.stl"
+	_check(BdgIO.export_stl_binary(box, bin_path), "export_stl_binary writes file")
+	var fb := FileAccess.open(bin_path, FileAccess.READ)
+	if fb:
+		fb.seek(80)
+		var count := fb.get_32()
+		_check(count == triangles.size() / 3, "binary stl triangle count %d" % count)
+		fb.close()
