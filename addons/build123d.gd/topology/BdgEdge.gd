@@ -218,6 +218,21 @@ static func make_bspline(
 	var mk := OcgBRepBuilderAPIMakeEdge.from_5(spline)
 	return BdgEdge.new(mk.edge())
 
+## line between two reference edges at a fractional distance (default center)
+static func make_mid_way(first: BdgEdge, second: BdgEdge, middle: float = 0.5) -> BdgEdge:
+	if first == null or second == null or first.is_null() or second.is_null():
+		push_error("make_mid_way: edges must be valid")
+		return null
+	# flip second edge if parallel and opposite, so the mid-way line isn't truncated
+	var flip: bool = first.tangent_at(0.0).dot(second.tangent_at(0.0)) < -1e-6
+	var p0 := make_line(
+		first.position_at(0.0), second.position_at(1.0 if flip else 0.0)
+	).position_at(middle)
+	var p1 := make_line(
+		first.position_at(1.0), second.position_at(0.0 if flip else 1.0)
+	).position_at(middle)
+	return make_line(p0, p1)
+
 ## full or partial parabola in a plane centered at origin (angle in degrees)
 static func make_parabola(
 	focal_length: float,

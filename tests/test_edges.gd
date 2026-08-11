@@ -24,6 +24,7 @@ func _init():
 	_test_fillet()
 	_test_bspline_loft()
 	_test_parabola_hyperbola()
+	_test_mid_way()
 	_test_split_by_perimeter()
 	print("edges tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -211,6 +212,21 @@ func _test_fillet() -> bool:
 	var open := BdgWire.make_polygon([Vector3(0, 0, 0), Vector3(10, 0, 0), Vector3(10, 5, 0), Vector3(5, 5, 0)], false)
 	var fw4 := open.fillet_2d(1.0)
 	check(fw4 != null and not fw4.is_closed() and fw4.edges().size() == 5, "fillet_2d open wire -> 5 edges, stays open")
+
+	return failures == 0
+
+func _test_mid_way() -> bool:
+	var bottom := BdgEdge.make_line(Vector3(0, 0, 0), Vector3(10, 0, 0))
+	var top := BdgEdge.make_line(Vector3(0, 10, 0), Vector3(10, 10, 0))
+	var mid := BdgEdge.make_mid_way(bottom, top)
+	check(mid != null, "make_mid_way creates edge")
+	if mid != null:
+		check(absf(mid.length() - 10.0) < 1e-6, "mid-way connects edge endpoints, length %.4f" % mid.length())
+		var p0: Vector3 = mid.position_at(0.0)
+		check(p0.distance_to(Vector3(0, 5, 0)) < 1e-6, "mid-way starts at center, got %s" % p0)
+	var opp := BdgEdge.make_line(Vector3(10, 20, 0), Vector3(0, 20, 0))
+	var mid2 := BdgEdge.make_mid_way(bottom, opp)
+	check(mid2 != null and absf(mid2.length() - 10.0) < 1e-6, "reversed edge flips so mid-way is centered, length %.4f" % (mid2.length() if mid2 != null else -1.0))
 
 	return failures == 0
 
