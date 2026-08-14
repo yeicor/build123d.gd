@@ -20,9 +20,9 @@ jobs:
           enable-cache: true
 
       - name: Setup Godot Engine
-        uses: chickenandcake/setup-godot@v2
+        uses: chickensoft-games/setup-godot@v2
         with:
-          version: '4.3'
+          version: '4.7.1'
           use-dotnet: false
 
       - name: Run Showcase Example Parity Tests
