@@ -6,3 +6,6 @@
 addons/OpenCASCADE.gd/*.so
 addons/OpenCASCADE.gd/*.dll
 addons/OpenCASCADE.gd/*.dylib
+
+# Python caches
+__pycache__/

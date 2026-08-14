@@ -163,5 +163,9 @@ func to_ax2() -> OcgGpAx2:
 		OcgGpDir.from_6(x_dir.x, x_dir.y, x_dir.z),
 	)
 
+## Create a new plane shifted along its normal z_dir by distance.
+func offset(dist: float) -> BdgPlane:
+	return BdgPlane.new(origin + z_dir * dist, x_dir, z_dir)
+
 func _to_string() -> String:
 	return "Plane(origin=%s, x_dir=%s, z_dir=%s)" % [origin, x_dir, z_dir]

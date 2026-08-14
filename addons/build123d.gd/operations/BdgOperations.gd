@@ -1,16 +1,44 @@
 extends RefCounted
-## BdgOperations - module-level operation functions.
-## Mirrors build123d operations_part.py / operations_generic.py.
+## BdgOperations - Unified facade for all generic, sketch, and part operations.
+## Mirrors build123d operations_generic.py, operations_sketch.py, and operations_part.py.
 class_name BdgOperations
 
-## Extrude a Face (or a shape with faces) by an amount along the face normal,
-## or along an explicit direction. Returns a BdgPart containing the solids.
-## Args:
-##   to_extrude: BdgFace or any BdgShape (its faces are used) or Array of faces
-##   amount: float - extrusion distance (sign controls direction)
-##   dir: Vector3 - optional explicit direction (magnitude multiplied by amount)
-##   both: bool - extrude in both directions
-##   mode: BdgEnums.Mode - reserved for builder context, ignored here
+# --- Generic Operations ---
+
+static func add(objects: Variant, mode: int = BdgEnums.Mode.ADD) -> Variant:
+	return BdgOpsGeneric.add(objects, mode)
+
+static func mirror(objects: Variant, about: BdgPlane = null) -> Variant:
+	return BdgOpsGeneric.mirror(objects, about)
+
+static func scale(objects: Variant, factor: Variant, center: Vector3 = Vector3.ZERO) -> Variant:
+	return BdgOpsGeneric.scale(objects, factor, center)
+
+static func offset(objects: Variant, amount: float, kind: int = 0) -> Variant:
+	return BdgOpsGeneric.offset(objects, amount, kind)
+
+static func project(objects: Variant, target: BdgShape, direction: Vector3 = Vector3.ZERO) -> Array:
+	return BdgOpsGeneric.project(objects, target, direction)
+
+static func split(objects: Variant, bisect_by: Variant, keep: int = BdgEnums.Keep.TOP) -> Variant:
+	return BdgOpsGeneric.split(objects, bisect_by, keep)
+
+static func bounding_box(objects: Variant) -> BdgBoundBox:
+	return BdgOpsGeneric.bounding_box(objects)
+
+# --- Sketch Operations ---
+
+static func make_face(wires_or_edges: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace:
+	return BdgOpsSketch.make_face(wires_or_edges, mode)
+
+static func make_hull(points_or_shapes: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace:
+	return BdgOpsSketch.make_hull(points_or_shapes, mode)
+
+static func trace(wire: BdgWire, distance: float, mode: int = BdgEnums.Mode.ADD) -> BdgFace:
+	return BdgOpsSketch.trace(wire, distance, mode)
+
+# --- Part Operations ---
+
 static func extrude(
 	to_extrude: Variant,
 	amount: float,
@@ -19,165 +47,40 @@ static func extrude(
 	taper: float = 0.0,
 	mode: int = BdgEnums.Mode.ADD,
 ) -> BdgPart:
-	var faces: Array = []
-	if to_extrude is Array:
-		for f in to_extrude:
-			if f is BdgShape:
-				faces.append(f)
-	elif to_extrude is BdgShape:
-		faces = to_extrude.faces()
-	else:
-		push_error("BdgOperations.extrude: unsupported input")
-	var solids: Array = []
-	for face in faces:
-		var direction: Vector3 = face.normal() * amount
-		if dir != Vector3.ZERO:
-			direction = dir.normalized() * amount
-		var result: BdgShape = face.extrude(direction)
-		if result is BdgSolid:
-			solids.append(result)
-		elif result is BdgCompound:
-			for s in result.solids():
-				solids.append(s)
-	if both:
-		var both_solids: Array = []
-		for face in faces:
-			var direction: Vector3 = face.normal() * (-amount)
-			if dir != Vector3.ZERO:
-				direction = dir.normalized() * (-amount)
-			var result: BdgShape = face.extrude(direction)
-			if result is BdgSolid:
-				both_solids.append(result)
-			elif result is BdgCompound:
-				for s in result.solids():
-					both_solids.append(s)
-		solids.append_array(both_solids)
-	var result_part := BdgPart.new(BdgShape.make_compound_of(solids), solids)
-	if BdgBuilder.has_context(BdgBuildPart.TAG):
-		BdgBuilder.add_to_current(result_part, mode, BdgBuildPart.TAG)
-	return result_part
+	return BdgOpsPart.extrude(to_extrude, amount, dir, both, taper, mode)
 
-## Fillet the given edges (or vertices, via their parent) with the given radius.
-static func fillet(objects: Variant, radius: float) -> BdgShape:
-	var edges: Array = []
-	var parent: BdgShape = null
-	if objects is Array:
-		for o in objects:
-			if o is BdgEdge:
-				edges.append(o)
-				parent = parent if parent != null else o.topo_parent
-			elif o is BdgVertex:
-				parent = parent if parent != null else o.topo_parent
-	elif objects is BdgEdge:
-		edges = [objects]
-		parent = objects.topo_parent
-	if edges.is_empty() or parent == null:
-		push_error("BdgOperations.fillet: no edges to fillet")
-		return null
-	if parent is BdgSolid:
-		return parent.fillet(radius, edges)
-	if parent is BdgCompound:
-		var sols: Array = parent.solids()
-		if not sols.is_empty():
-			return sols[0].fillet(radius, edges)
-	push_error("BdgOperations.fillet: parent is not a solid")
-	return null
-
-## Chamfer the given edges of a solid.
-static func chamfer(objects: Variant, length: float, length2: float = 0.0) -> BdgShape:
-	var edges: Array = []
-	var parent: BdgShape = null
-	if objects is Array:
-		for o in objects:
-			if o is BdgEdge:
-				edges.append(o)
-				parent = parent if parent != null else o.topo_parent
-	elif objects is BdgEdge:
-		edges = [objects]
-		parent = objects.topo_parent
-	if edges.is_empty() or parent == null:
-		push_error("BdgOperations.chamfer: no edges to chamfer")
-		return null
-	if parent is BdgSolid:
-		return parent.chamfer(length, length2, edges)
-	if parent is BdgCompound:
-		var sols: Array = parent.solids()
-		if not sols.is_empty():
-			return sols[0].chamfer(length, length2, edges)
-	push_error("BdgOperations.chamfer: parent is not a solid")
-	return null
-
-## Revolve a face/profile around an axis by an angle in degrees.
-## Returns a BdgPart containing the resulting solids.
 static func revolve(
 	to_revolve: Variant,
 	angle: float,
-	axis: BdgAxis = BdgAxis.Z,
+	axis: BdgAxis = null,
 	mode: int = BdgEnums.Mode.ADD,
 ) -> BdgPart:
-	var shape: BdgShape = null
-	if to_revolve is Array:
-		var faces: Array = []
-		for f in to_revolve:
-			if f is BdgShape:
-				faces.append(f)
-		shape = BdgShape.make_compound_of(faces)
-	elif to_revolve is BdgShape:
-		shape = to_revolve
-	else:
-		push_error("BdgOperations.revolve: unsupported input")
-		return null
-	var result: BdgShape = shape.revolve(angle, axis)
-	var solids: Array = []
-	if result is BdgSolid:
-		solids.append(result)
-	elif result is BdgCompound:
-		solids = result.solids()
-	var result_part := BdgPart.new(BdgShape.make_compound_of(solids), solids)
-	if BdgBuilder.has_context(BdgBuildPart.TAG):
-		BdgBuilder.add_to_current(result_part, mode, BdgBuildPart.TAG)
-	return result_part
+	return BdgOpsPart.revolve(to_revolve, angle, axis, mode)
 
-## Sweep a profile (face/wire) along a spine wire. Returns the resulting shape.
 static func sweep(
 	profile: Variant,
-	path: BdgWire,
+	path: Variant,
 	mode: int = BdgEnums.Mode.ADD,
 ) -> BdgShape:
-	var shape: BdgShape = null
-	if profile is Array:
-		var faces: Array = []
-		for f in profile:
-			if f is BdgShape:
-				faces.append(f)
-		shape = BdgShape.make_compound_of(faces)
-	elif profile is BdgShape:
-		shape = profile
-	else:
-		push_error("BdgOperations.sweep: unsupported input")
-		return null
-	var result: BdgShape = shape.sweep(path)
-	if result != null and BdgBuilder.has_context(BdgBuildPart.TAG):
-		BdgBuilder.add_to_current(result, mode, BdgBuildPart.TAG)
-	return result
+	return BdgOpsPart.sweep(profile, path, mode)
 
-## Section the shape with a plane, returns array of BdgEdge.
-static func section(shape: BdgShape, plane: BdgPlane = null) -> Array:
-	if shape == null:
-		return []
-	return shape.section(plane)
-
-## Loft a solid/shell through the given sections (wires and/or apex vertices).
-## Returns a BdgSolid. Integrates with the BuildPart context when active.
 static func loft(objs: Array, ruled: bool = false, mode: int = BdgEnums.Mode.ADD) -> BdgSolid:
-	var result: BdgShape = BdgShape.make_loft(objs, ruled, true)
-	if result == null:
-		return null
-	var solid: BdgSolid = result as BdgSolid
-	if solid == null:
-		push_error("BdgOperations.loft did not produce a solid")
-		return null
-	var result_part := BdgPart.new(BdgShape.make_compound_of([result]), [result])
-	if BdgBuilder.has_context(BdgBuildPart.TAG):
-		BdgBuilder.add_to_current(result_part, mode, BdgBuildPart.TAG)
-	return solid
+	return BdgOpsPart.loft(objs, ruled, mode)
+
+static func fillet(objects: Variant, radius: float) -> BdgShape:
+	return BdgOpsPart.fillet(objects, radius)
+
+static func chamfer(objects: Variant, length: float, length2: float = 0.0) -> BdgShape:
+	return BdgOpsPart.chamfer(objects, length, length2)
+
+static func section(shape: BdgShape, plane: BdgPlane = null) -> Array:
+	return BdgOpsPart.section(shape, plane)
+
+static func thicken(shape: BdgShape, amount: float, mode: int = BdgEnums.Mode.ADD) -> BdgShape:
+	return BdgOpsPart.thicken(shape, amount, mode)
+
+static func hollow(solid: BdgSolid, faces_to_remove: Array, thickness: float, mode: int = BdgEnums.Mode.ADD) -> BdgSolid:
+	return BdgOpsPart.hollow(solid, faces_to_remove, thickness, mode)
+
+static func draft(solid: BdgSolid, faces: Array, angle_deg: float, neutral_plane: BdgPlane, pull_dir: Vector3 = Vector3.ZERO, mode: int = BdgEnums.Mode.ADD) -> BdgSolid:
+	return BdgOpsPart.draft(solid, faces, angle_deg, neutral_plane, pull_dir, mode)

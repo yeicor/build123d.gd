@@ -62,6 +62,9 @@ static func make_three_point_arc(p1: Vector3, p2: Vector3, p3: Vector3) -> BdgEd
 	var mk := OcgBRepBuilderAPIMakeEdge.from_5(mkarc.value())
 	return BdgEdge.new(mk.edge())
 
+static func make_arc_radius(p1: Vector3, p2: Vector3, radius: float, short_sagitta: bool = true) -> BdgEdge:
+	return make_radius_arc(p1, p2, radius, short_sagitta)
+
 ## center arc (numeric arc_size in degrees, positive = CCW)
 static func make_center_arc(
 	center: Vector3,
@@ -133,8 +136,16 @@ static func make_sagitta_arc(
 	var mid_point := (end_point + start_point) * 0.5
 	var chord_dir := (end_point - start_point).normalized()
 	var sag_vector := chord_dir * absf(sagitta)
-	var perp := Vector3.UP if absf(chord_dir.y) < 0.999 else Vector3.RIGHT
-	var rot_axis := chord_dir.cross(perp).normalized()
+	var rot_axis: Vector3
+	if is_zero_approx(start_point.y) and is_zero_approx(end_point.y):
+		rot_axis = Vector3(0, 1, 0)
+	elif is_zero_approx(start_point.z) and is_zero_approx(end_point.z):
+		rot_axis = Vector3(0, 0, 1)
+	elif is_zero_approx(start_point.x) and is_zero_approx(end_point.x):
+		rot_axis = Vector3(1, 0, 0)
+	else:
+		var perp := Vector3.UP if absf(chord_dir.y) < 0.999 else Vector3.RIGHT
+		rot_axis = chord_dir.cross(perp).normalized()
 	var sign := 1.0 if sagitta > 0.0 else -1.0
 	var sag_point := mid_point + sag_vector.rotated(rot_axis, sign * PI / 2.0)
 	return make_three_point_arc(start_point, sag_point, end_point)
@@ -171,13 +182,19 @@ static func make_bezier(control_points: Array, weights: Array = []) -> BdgEdge:
 	return BdgEdge.new(mk.edge())
 
 ## spline interpolating through points
-static func make_spline(points: Array) -> BdgEdge:
+static func make_spline(points: Array, tangents: Array = [], scale: bool = true) -> BdgEdge:
 	var arr := OcgNCollectionArray1GpPnt.from_k(1, points.size())
 	for i in points.size():
 		var p: Vector3 = points[i]
 		arr.set_value_v(i + 1, OcgGpPnt.from_6(p.x, p.y, p.z))
 	var pnts := OcgNCollectionHArray1GpPnt.from_w(arr)
 	var interp := OcgGeomAPIInterpolate.from_n(pnts, false, 1e-6)
+	if tangents.size() >= 2:
+		var t0_v: Vector3 = tangents[0]
+		var t1_v: Vector3 = tangents[1]
+		var t0 := OcgGpVec.from_6(t0_v.x, t0_v.y, t0_v.z)
+		var t1 := OcgGpVec.from_6(t1_v.x, t1_v.y, t1_v.z)
+		interp.load_Y(t0, t1, scale)
 	interp.perform()
 	var mk := OcgBRepBuilderAPIMakeEdge.from_5(interp.curve())
 	return BdgEdge.new(mk.edge())
@@ -343,6 +360,132 @@ static func make_helix(
 	var edge := mk.edge()
 	OcgBRepLib.build_curves3d_5(edge, 1e-9, 14, 0)
 	return BdgEdge.new(edge)
+
+## double tangent arc: smooth curve from p1 (along tangent1) to p2 (along tangent2)
+static func make_double_tangent_arc(p1: Vector3, tangent1: Vector3, p2: Vector3, tangent2: Vector3) -> BdgEdge:
+	var arr := OcgNCollectionArray1GpPnt.from_k(1, 2)
+	arr.set_value_v(1, OcgGpPnt.from_6(p1.x, p1.y, p1.z))
+	arr.set_value_v(2, OcgGpPnt.from_6(p2.x, p2.y, p2.z))
+	var pnts := OcgNCollectionHArray1GpPnt.from_w(arr)
+	var interp := OcgGeomAPIInterpolate.from_n(pnts, false, 1e-6)
+	var t1 := OcgGpVec.from_6(tangent1.x, tangent1.y, tangent1.z)
+	var t2 := OcgGpVec.from_6(tangent2.x, tangent2.y, tangent2.z)
+	interp.load_Y(t1, t2, true)
+	interp.perform()
+	if not interp.is_done():
+		push_error("make_double_tangent_arc: interpolation failed")
+		return null
+	var mk := OcgBRepBuilderAPIMakeEdge.from_5(interp.curve())
+	return BdgEdge.new(mk.edge())
+
+## jern arc: circular arc from start point along initial tangent with given radius and arc_size (degrees)
+static func make_jern_arc(
+	start: Vector3,
+	tangent: Vector3,
+	radius: float,
+	arc_size: float,
+	plane: BdgPlane = null,
+) -> BdgEdge:
+	var p := plane if plane != null else BdgPlane.XY
+	var normal := p.z_dir
+	var t := tangent.normalized()
+	var perp := normal.cross(t).normalized()
+	if arc_size < 0.0:
+		perp = -perp
+	var center := start + perp * absf(radius)
+	var from_center := start - center
+	var dx := from_center.dot(p.x_dir)
+	var dy := from_center.dot(p.y_dir)
+	var start_angle := rad_to_deg(atan2(dy, dx))
+	return make_center_arc(center, absf(radius), start_angle, arc_size, p)
+
+## elliptical center arc: arc of an ellipse around center
+static func make_elliptical_center_arc(
+	center: Vector3,
+	x_radius: float,
+	y_radius: float,
+	start_angle: float = 0.0,
+	end_angle: float = 90.0,
+	plane: BdgPlane = null,
+	angular_direction: int = BdgEnums.AngularDirection.COUNTER_CLOCKWISE,
+) -> BdgEdge:
+	var p := BdgPlane.new()
+	if plane != null:
+		p.origin = center
+		p.x_dir = plane.x_dir
+		p.y_dir = plane.y_dir
+		p.z_dir = plane.z_dir
+	else:
+		p.origin = center
+		p.x_dir = Vector3.RIGHT
+		p.y_dir = Vector3.UP
+		p.z_dir = Vector3.BACK
+	return make_ellipse(x_radius, y_radius, p, start_angle, end_angle)
+
+## Trim this edge to parameter range (0..1)
+func trim(start_param: float, end_param: float) -> BdgEdge:
+	var c := _edge_curve_with_bounds()
+	if c.is_empty():
+		return null
+	var curve: OcgGeomCurve = c[0]
+	var lo: float = c[1]
+	var hi: float = c[2]
+	var u1 := lo + clampf(start_param, 0.0, 1.0) * (hi - lo)
+	var u2 := lo + clampf(end_param, 0.0, 1.0) * (hi - lo)
+	var mk := OcgBRepBuilderAPIMakeEdge.from_A(curve, u1, u2)
+	return BdgEdge.new(mk.edge())
+
+## Find geometric intersections between this edge and another edge.
+## Returns Array of Dictionaries: [{"point": Vector3, "param_self": float, "param_other": float, "distance": float}]
+func find_intersection(other: BdgEdge, tolerance: float = 1e-5) -> Array:
+	var results: Array = []
+	var c1 := _edge_curve_with_bounds()
+	var c2 := other._edge_curve_with_bounds()
+	if c1.is_empty() or c2.is_empty():
+		return results
+	var curve1: OcgGeomCurve = c1[0]
+	var curve2: OcgGeomCurve = c2[0]
+	var ext := OcgGeomAPIExtremaCurveCurve.from_o(
+		curve1, curve2, c1[1], c1[2], c2[1], c2[2]
+	)
+	if ext == null:
+		return results
+	for i in range(1, ext.nb_extrema() + 1):
+		var d := ext.distance(i)
+		if d <= tolerance:
+			var p1 := OcgGpPnt.new()
+			var p2 := OcgGpPnt.new()
+			ext.points(i, p1, p2)
+			var u1 := OcgStandardReal.new()
+			var u2 := OcgStandardReal.new()
+			ext.parameters(i, u1, u2)
+			var param_self: float = (u1.get_value() - c1[1]) / (c1[2] - c1[1]) if c1[2] != c1[1] else 0.0
+			var param_other: float = (u2.get_value() - c2[1]) / (c2[2] - c2[1]) if c2[2] != c2[1] else 0.0
+			results.append({
+				"point": BdgShape._gp_pnt_to_v3(p1),
+				"param_self": param_self,
+				"param_other": param_other,
+				"distance": d,
+			})
+	return results
+
+## Project this edge onto a target shape surface along a direction.
+## Returns Array of BdgEdge projected onto the shape.
+func project_to_shape(target: BdgShape, direction: Vector3 = Vector3.ZERO) -> Array:
+	if is_null() or target == null or target.is_null():
+		return []
+	var proj_dir := direction.normalized() if direction != Vector3.ZERO else Vector3.BACK
+	var d := OcgGpDir.from_6(proj_dir.x, proj_dir.y, proj_dir.z)
+	var proj := OcgBRepProjProjection.from_X(_wrapped, target._wrapped, d)
+	var edges_out: Array = []
+	if proj != null and proj.is_done():
+		while proj.more():
+			var wire := proj.current()
+			var w_shape := BdgShape.cast(wire)
+			for e in w_shape.edges():
+				edges_out.append(e)
+			proj.next()
+	return edges_out
 
 static func _plane_to_pnt(plane: BdgPlane) -> OcgGpPnt:
 	return OcgGpPnt.from_6(plane.origin.x, plane.origin.y, plane.origin.z)

@@ -10,6 +10,10 @@ var for_construction: bool = false
 var _color: BdgColor = null
 var topo_parent: BdgShape = null
 
+## Enable OpenCASCADE parallel meshing (BRepMesh_IncrementalMesh isInParallel).
+## Toggled at runtime from the viewer Misc tab. On by default.
+static var parallel_meshing: bool = true
+
 ## Construct. Args:
 ##   ()                      -> empty shape
 ##   (obj: OcgTopoDSShape)   -> wrap existing shape
@@ -44,11 +48,22 @@ func is_valid() -> bool:
 	var chk := OcgBRepCheckAnalyzer.from_L(_wrapped, true, false, true)
 	return chk.is_valid_k()
 
-## Remove extraneous internal structure (returns self)
+## Remove extraneous internal structure (unifies coplanar faces & collinear edges)
 func clean() -> BdgShape:
 	if _wrapped != null and not _wrapped.is_null():
-		OcgBRepTools.clean(_wrapped, true)
+		var unifier := OcgShapeUpgradeUnifySameDomain.new()
+		unifier.initialize(_wrapped)
+		unifier.build()
+		var res := unifier.shape()
+		if res != null and not res.is_null():
+			return BdgShape.cast(res)
 	return self
+
+## Return a clone / copy of this shape
+func clone() -> BdgShape:
+	if _wrapped == null or _wrapped.is_null():
+		return null
+	return BdgShape.cast(_wrapped)
 
 func is_same(other: BdgShape) -> bool:
 	if _wrapped == null or other._wrapped == null:
@@ -185,8 +200,32 @@ func translate(v: Vector3) -> BdgShape:
 func rotated_about(axis: BdgAxis, angle_deg: float) -> BdgShape:
 	return transform_geometry(BdgMatrix.rotation_about(axis.position, axis.direction, angle_deg))
 
+## Alias for rotated_about
+func rotate(axis: BdgAxis, angle_deg: float) -> BdgShape:
+	return rotated_about(axis, angle_deg)
+
 func scale(factor: float, center: Vector3 = Vector3.ZERO) -> BdgShape:
 	return transform_geometry(BdgMatrix.scaling(center, Vector3.ONE * factor))
+
+## Non-uniform scale about a center, returning a new copy of the shape.
+## build123d's `scale(by=(sx, sy, sz), mode=...)` uses a general (non-uniform)
+## transform, which a gp_Trsf cannot represent, so this uses BRepBuilderAPI_GTransform.
+func scaled(factor: Vector3, center: Vector3 = Vector3.ZERO) -> BdgShape:
+	if _wrapped == null or _wrapped.is_null():
+		return self
+	var gtrsf := OcgGpGTrsf.new()
+	gtrsf.set_value(1, 1, factor.x)
+	gtrsf.set_value(2, 2, factor.y)
+	gtrsf.set_value(3, 3, factor.z)
+	if not center.is_zero_approx():
+		var t := center - factor * center
+		gtrsf.set_translation_part(OcgGpXYZ.from_6(t.x, t.y, t.z))
+	var gtrans := OcgBRepBuilderAPIGTransform.from_D(_wrapped, gtrsf, true)
+	gtrans.perform(_wrapped, true)
+	var out := gtrans.modified_shape(_wrapped)
+	if out == null or out.is_null():
+		return self
+	return BdgShape.cast(out)
 
 ## transform geometry (in place)
 func transform_geometry(m: BdgMatrix) -> BdgShape:
@@ -220,7 +259,8 @@ func bounding_box(tolerance: float = -1.0) -> BdgBoundBox:
 	var box := OcgBndBox.new()
 	if tolerance > 0.0:
 		box.set_gap(tolerance)
-	OcgBRepBndLib.add(_wrapped, box, true)
+	OcgBRepTools.clean(_wrapped, true)
+	OcgBRepBndLib.add_optimal(_wrapped, box, false, false)
 	return BdgBoundBox.new(box)
 
 # ---------------------------------------------------------------------------
@@ -284,8 +324,13 @@ func _bool_op(args: Array, tools: Array, op_name: String) -> BdgShape:
 		if obj._wrapped != null:
 			wrapped_tools.append(obj._wrapped)
 
-	if wrapped_args.is_empty():
+	if wrapped_args.is_empty() and _wrapped != null:
 		wrapped_args.append(_wrapped)
+
+	if wrapped_args.is_empty() or wrapped_args[0] == null:
+		return BdgShape.new()
+	if wrapped_tools.is_empty() or wrapped_tools[0] == null:
+		return BdgShape.cast(wrapped_args[0])
 
 	var op: RefCounted = null
 	var topo_result: OcgTopoDSShape = null
@@ -297,21 +342,24 @@ func _bool_op(args: Array, tools: Array, op_name: String) -> BdgShape:
 		else:
 			var tool_comp := _make_compound_topo(wrapped_tools)
 			op = OcgBRepAlgoAPIFuse.from_b(wrapped_args[0], tool_comp, rng)
-		topo_result = op.shape()
+		if op != null and op.is_done():
+			topo_result = op.shape()
 	elif op_name == "cut":
 		if wrapped_tools.size() == 1:
 			op = OcgBRepAlgoAPICut.from_b(wrapped_args[0], wrapped_tools[0], rng)
 		else:
 			var tool_comp := _make_compound_topo(wrapped_tools)
 			op = OcgBRepAlgoAPICut.from_b(wrapped_args[0], tool_comp, rng)
-		topo_result = op.shape()
+		if op != null and op.is_done():
+			topo_result = op.shape()
 	elif op_name == "intersect":
 		if wrapped_tools.size() == 1:
 			op = OcgBRepAlgoAPICommon.from_b(wrapped_args[0], wrapped_tools[0], rng)
 		else:
 			var tool_comp := _make_compound_topo(wrapped_tools)
 			op = OcgBRepAlgoAPICommon.from_b(wrapped_args[0], tool_comp, rng)
-		topo_result = op.shape()
+		if op != null and op.is_done():
+			topo_result = op.shape()
 
 	if topo_result == null or topo_result.is_null():
 		return BdgShape.new()
@@ -328,9 +376,10 @@ func _bool_op(args: Array, tools: Array, op_name: String) -> BdgShape:
 ## Tessellate this shape into Godot-native vertex/triangle arrays.
 ## Returns [vertices: PackedVector3Array, triangles: PackedInt32Array].
 ## tolerance (linear) and angular_tolerance (degrees) control mesh density.
-func tessellate(tolerance: float = 0.1, angular_tolerance: float = 10.0) -> Array:
+## Build123d interactive display defaults: linear=0.1, angular=0.2 rad (≈11.46°)
+func tessellate(tolerance: float = 0.1, angular_tolerance: float = 11.459) -> Array:
 	var mesh := OcgBRepMeshIncrementalMesh.from_z(
-		_wrapped, tolerance, false, deg_to_rad(angular_tolerance), false
+		_wrapped, tolerance, false, deg_to_rad(angular_tolerance), BdgShape.parallel_meshing
 	)
 	mesh.perform_W(OcgMessageProgressRange.new())
 	var vertices := PackedVector3Array()
@@ -351,6 +400,51 @@ func tessellate(tolerance: float = 0.1, angular_tolerance: float = 10.0) -> Arra
 			triangles.append(base + tr.value(2) - 1)
 			triangles.append(base + tr.value(3) - 1)
 	return [vertices, triangles]
+
+## Tessellate this shape into Godot-native vertices, triangles, and OpenCASCADE UVs.
+## Returns [vertices: PackedVector3Array, triangles: PackedInt32Array, uvs: PackedVector2Array].
+## Build123d interactive display defaults: linear=0.1, angular=0.2 rad (≈11.46°)
+func tessellate_with_uvs(tolerance: float = 0.1, angular_tolerance: float = 11.459, texture_scale: float = 0.05) -> Array:
+	var mesh_inc := OcgBRepMeshIncrementalMesh.from_z(
+		_wrapped, tolerance, false, deg_to_rad(angular_tolerance), BdgShape.parallel_meshing
+	)
+	mesh_inc.perform_W(OcgMessageProgressRange.new())
+
+	var vertices := PackedVector3Array()
+	var triangles := PackedInt32Array()
+	var uvs := PackedVector2Array()
+
+	for face in faces():
+		var loc := OcgTopLocLocation.new()
+		var tri := OcgBRepTool.triangulation(face._wrapped, loc, 0)
+		if tri == null:
+			continue
+		var trsf := loc.transformation()
+		var base := vertices.size()
+
+		# Surface parametric mapping directly from OpenCASCADE
+		var surf: OcgGeomSurface = OcgBRepTool.surface_a(face._wrapped)
+		var sas: OcgShapeAnalysisSurface = OcgShapeAnalysisSurface.from_G(surf) if surf != null else null
+
+		for i in tri.nb_nodes():
+			var p := tri.node(i + 1).transformed(trsf)
+			var pt_v3 := Vector3(p.x(), p.y(), p.z())
+			vertices.append(pt_v3)
+
+			if sas != null:
+				var pnt_gp := OcgGpPnt.from_6(pt_v3.x, pt_v3.y, pt_v3.z)
+				var uv_occt := sas.value_of_uv(pnt_gp, 1e-4)
+				uvs.append(Vector2(uv_occt.x() * texture_scale, uv_occt.y() * texture_scale))
+			else:
+				uvs.append(Vector2(pt_v3.x * texture_scale, pt_v3.y * texture_scale))
+
+		for t in tri.nb_triangles():
+			var tr := tri.triangle(t + 1)
+			triangles.append(base + tr.value(1) - 1)
+			triangles.append(base + tr.value(2) - 1)
+			triangles.append(base + tr.value(3) - 1)
+
+	return [vertices, triangles, uvs]
 
 static func _make_compound_topo(shapes: Array[OcgTopoDSShape]) -> OcgTopoDSShape:
 	if shapes.size() == 1:
@@ -381,6 +475,48 @@ func cut(other: BdgShape) -> BdgShape:
 
 func intersect(other: BdgShape) -> BdgShape:
 	return _bool_op([self], [other], "intersect")
+
+## Fillet edges of this shape with given radius
+func fillet(radius: float, edge_list: Array = []) -> BdgShape:
+	if edge_list.is_empty():
+		edge_list = edges()
+	var solids_list := solids()
+	if not solids_list.is_empty():
+		var sol: BdgSolid = solids_list[0] as BdgSolid
+		return sol.fillet(radius, edge_list)
+	return self
+
+## Multisection sweep (pipe shell) along a path wire through section faces or wires.
+static func make_pipe_shell(path_wire: BdgWire, sections: Array, as_solid: bool = true) -> BdgShape:
+	if path_wire == null or path_wire._wrapped == null or sections.is_empty():
+		push_error("make_pipe_shell requires a valid path wire and sections")
+		return null
+	var tw_path := OcgTopoDSShape.cast_wire(path_wire._wrapped)
+	if tw_path == null:
+		push_error("make_pipe_shell: invalid path wire")
+		return null
+
+	var pipe := OcgBRepOffsetAPIMakePipeShell.from_I(tw_path)
+	pipe.set_mode_c(false)
+	for sec in sections:
+		var tw_sec: OcgTopoDSWire = null
+		if sec is BdgWire:
+			tw_sec = OcgTopoDSShape.cast_wire((sec as BdgWire)._wrapped)
+		elif sec is BdgFace:
+			var ow: BdgWire = (sec as BdgFace).outer_wire()
+			if ow != null and ow._wrapped != null:
+				tw_sec = OcgTopoDSShape.cast_wire(ow._wrapped)
+		elif sec is BdgShape:
+			var ws: Array = (sec as BdgShape).wires()
+			if not ws.is_empty():
+				tw_sec = OcgTopoDSShape.cast_wire((ws[0] as BdgWire)._wrapped)
+		if tw_sec != null:
+			pipe.add_T(tw_sec)
+	pipe.build(OcgMessageProgressRange.new())
+	if as_solid:
+		pipe.make_solid()
+	var res := pipe.shape()
+	return BdgShape.cast(res) if res != null and not res.is_null() else null
 
 ## fuse with multiple tools at once
 func fuse_all(tools: Array) -> BdgShape:
@@ -550,20 +686,37 @@ static func make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -
 		return null
 	var loft := OcgBRepOffsetAPIThruSections.from_R(as_solid, ruled, 1e-6)
 	for obj in objs:
-		if obj is BdgWire:
-			var tw := OcgTopoDSShape.cast_wire(obj._wrapped)
-			if tw == null:
-				push_error("make_loft: section is not a wire")
-				return null
-			loft.add_wire(tw)
-		elif obj is BdgVertex:
+		if obj is BdgVertex:
 			var tv := OcgTopoDSShape.cast_vertex(obj._wrapped)
-			if tv == null:
-				push_error("make_loft: apex is not a vertex")
+			if tv != null:
+				loft.add_vertex(tv)
+			else:
+				push_error("make_loft: invalid vertex")
 				return null
-			loft.add_vertex(tv)
+			continue
+
+		var tw: OcgTopoDSWire = null
+		if obj is BdgWire:
+			tw = OcgTopoDSShape.cast_wire(obj._wrapped)
+		elif obj is BdgFace:
+			var ow: BdgWire = (obj as BdgFace).outer_wire()
+			if ow != null:
+				tw = OcgTopoDSShape.cast_wire(ow._wrapped)
+		elif obj is BdgShape:
+			var ws: Array = (obj as BdgShape).wires()
+			if not ws.is_empty():
+				tw = OcgTopoDSShape.cast_wire(ws[0]._wrapped)
+			else:
+				var es: Array = (obj as BdgShape).edges()
+				if not es.is_empty():
+					var w := BdgWire.make_wire(es)
+					if w != null:
+						tw = OcgTopoDSShape.cast_wire(w._wrapped)
+
+		if tw != null:
+			loft.add_wire(tw)
 		else:
-			push_error("make_loft: unsupported object")
+			push_error("make_loft: unsupported or empty section object")
 			return null
 	loft.build(OcgMessageProgressRange.new())
 	if not loft.is_done():
@@ -609,6 +762,12 @@ static func _plane_to_ax2(plane: BdgPlane) -> OcgGpAx2:
 func entities(topo_type: int) -> Array[OcgTopoDSShape]:
 	var result: Array[OcgTopoDSShape] = []
 	if is_null():
+		return result
+	if topo_type == int(BdgEnums.ShapeType.SOLID) and shape_type() == BdgEnums.ShapeType.COMPOUND:
+		var explorer := OcgTopExpExplorer.from_4(_wrapped, int(topo_type), int(BdgEnums.ShapeType.SHAPE))
+		while explorer.more():
+			result.append(OcgTopoDSShape.cast(explorer.current()))
+			explorer.next()
 		return result
 	var m := OcgNCollectionIndexedMapTopoDSShapeTopToolsShapeMapHasher.new()
 	OcgTopExp.map_shapes_H(_wrapped, int(topo_type), m)
@@ -803,5 +962,7 @@ static func BdgLocation_to_matrix(loc: BdgLocation) -> BdgMatrix:
 
 ## Duplicate a BdgShape (deep copy of wrapped OCCT shape)
 static func duplicate_shape(s: BdgShape) -> BdgShape:
+	if s == null or s.is_null():
+		return null
 	var copier := OcgBRepBuilderAPICopy.from_T(s._wrapped, true, false)
-	return BdgShape.cast(copier.modified_shape(s._wrapped))
+	return BdgShape.cast(copier.shape())

@@ -46,7 +46,15 @@ static func add_to_current(obj: BdgShape, mode: int, builder_tag: String) -> boo
 	var current := _current
 	while current != null:
 		if current._tag == builder_tag:
-			current._add_to_context(obj, mode)
+			var target_obj := obj
+			if BdgLocations.has_active_locations():
+				var locs := BdgLocations.get_current_locations()
+				if not locs.is_empty():
+					var replicated: Array = []
+					for loc in locs:
+						replicated.append(obj.moved(loc))
+					target_obj = BdgShape.make_compound_of(replicated)
+			current._add_to_context(target_obj, mode)
 			return true
 		var idx := _contexts.find(current)
 		current = _contexts[idx - 1] if idx > 0 else null

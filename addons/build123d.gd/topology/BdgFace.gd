@@ -8,13 +8,21 @@ func _init(...args) -> void:
 
 ## create a face from an outer wire with optional hole wires
 static func make_from_wires(outer_wire: BdgWire, inner_wires: Array = []) -> BdgFace:
-	if not outer_wire.is_closed():
+	if outer_wire == null or outer_wire._wrapped == null or not outer_wire.is_closed():
 		push_error("Face can only be created with closed wires")
 		return null
 	var mk := OcgBRepBuilderAPIMakeFace.from_y(outer_wire._wrapped, true)
 	for w in inner_wires:
-		mk.add(w._wrapped)
-	return BdgFace.new(mk.face())
+		if w is BdgShape and w._wrapped != null and not w.is_null():
+			mk.add(w._wrapped)
+		elif w is OcgTopoDSWire and not w.is_null():
+			mk.add(w)
+	if mk.is_done():
+		var face := mk.face()
+		var sf := OcgShapeFixFace.from_a(face)
+		sf.fix_orientation_g()
+		return BdgFace.new(sf.face())
+	return null
 
 ## create a rectangle face centered on origin of plane
 static func make_rect(width: float, height: float, plane: BdgPlane = null) -> BdgFace:
@@ -56,6 +64,27 @@ static func make_regular_polygon(radius: float, side_count: int, plane: BdgPlane
 		var local := Vector3(cos(ang), sin(ang), 0.0) * radius
 		pts.append(plane.origin + plane.x_dir * local.x + plane.y_dir * local.y)
 	return make_polygon(pts, plane)
+
+## create a 2D slot face with semicircular ends
+static func make_slot(length: float, width: float, rotation_deg: float = 0.0) -> BdgFace:
+	var r := width * 0.5
+	var d := maxf(0.0, (length - width) * 0.5)
+	var rot_rad := deg_to_rad(rotation_deg)
+	
+	var p1 := Vector3(-d, -r, 0.0).rotated(Vector3.FORWARD, rot_rad)
+	var p2 := Vector3(d, -r, 0.0).rotated(Vector3.FORWARD, rot_rad)
+	var p3 := Vector3(d, r, 0.0).rotated(Vector3.FORWARD, rot_rad)
+	var p4 := Vector3(-d, r, 0.0).rotated(Vector3.FORWARD, rot_rad)
+	var arc1_mid := Vector3(d + r, 0.0, 0.0).rotated(Vector3.FORWARD, rot_rad)
+	var arc2_mid := Vector3(-d - r, 0.0, 0.0).rotated(Vector3.FORWARD, rot_rad)
+	
+	var e1 := BdgEdge.make_line(p1, p2)
+	var e2 := BdgEdge.make_three_point_arc(p2, arc1_mid, p3)
+	var e3 := BdgEdge.make_line(p3, p4)
+	var e4 := BdgEdge.make_three_point_arc(p4, arc2_mid, p1)
+	
+	var w := BdgWire.make_wire([e1, e2, e3, e4])
+	return make_from_wires(w)
 
 ## create an isosceles triangle face (apex centered, base horizontal)
 static func make_triangle(base: float, height: float, plane: BdgPlane = null) -> BdgFace:
@@ -222,8 +251,50 @@ func normal() -> Vector3:
 
 ## outer wire of the face
 func outer_wire() -> BdgWire:
-	var wt := OcgBRepTools.outer_wire(_wrapped)
-	return BdgWire.new(wt)
+	if _wrapped == null or _wrapped.is_null():
+		return null
+	var tf := OcgTopoDSShape.cast_face(_wrapped)
+	if tf == null or tf.is_null():
+		var ws := wires()
+		return ws[0] if not ws.is_empty() else null
+	var wt := OcgBRepTools.outer_wire(tf)
+	return BdgWire.new(wt) if wt != null and not wt.is_null() else null
+
+## inner wires (hole boundaries) of the face
+func inner_wires() -> Array:
+	var outer := outer_wire()
+	var inners: Array = []
+	for w in wires():
+		if outer != null and outer._wrapped != null and w._wrapped != null:
+			if not w._wrapped.is_same(outer._wrapped):
+				inners.append(w)
+		else:
+			inners.append(w)
+	return inners
+
+## Whether the underlying surface is a plane
+func is_planar() -> bool:
+	return geom_type() == BdgEnums.GeomType.PLANE
+
+## Convert this planar face to a BdgPlane (origin at center, z_dir along normal)
+func to_plane() -> BdgPlane:
+	var n := normal()
+	var c := center()
+	var fallback := Vector3.UP if absf(n.dot(Vector3.UP)) < 0.99 else Vector3.RIGHT
+	var x := n.cross(fallback).normalized()
+	return BdgPlane.new(c, x, n)
+
+## Evaluate 3D surface point at normalized parameter (u: 0..1, v: 0..1)
+func surface_point(u: float, v: float) -> Vector3:
+	var adaptor := OcgBRepAdaptorSurface.from_K(_wrapped, false)
+	var u_min := adaptor.first_u_parameter()
+	var u_max := adaptor.last_u_parameter()
+	var v_min := adaptor.first_v_parameter()
+	var v_max := adaptor.last_v_parameter()
+	var u_val := u_min + clampf(u, 0.0, 1.0) * (u_max - u_min)
+	var v_val := v_min + clampf(v, 0.0, 1.0) * (v_max - v_min)
+	var pnt: OcgGpPnt = adaptor.value(u_val, v_val)
+	return BdgShape._gp_pnt_to_v3(pnt)
 
 ## The underlying surface geometry type name (e.g. "PLANE")
 func geometry() -> String:

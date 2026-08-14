@@ -10,8 +10,8 @@ var rotation: Vector3 = Vector3.ZERO
 func _init(...args) -> void:
 	super(null, [])
 
-## Build this part from a primitive solid.
-func _from_solid(solid: BdgSolid, rot: Variant, align: Variant, md: int) -> void:
+## Build this part from a primitive solid or compound shape.
+func _from_solid(solid: BdgShape, rot: Variant, align: Variant, md: int) -> void:
 	mode = md
 	var part: BdgShape = solid
 	if align is int and align != BdgEnums.Align.NONE:

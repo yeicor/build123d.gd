@@ -6,12 +6,29 @@ class_name BdgWire
 func _init(...args) -> void:
 	super(args[0] if args.size() == 1 else null)
 
-## Create a wire from a list of edges (must share endpoints)
+## Create a wire from a list of edges/wires (must share endpoints)
 static func make_wire(edges: Array) -> BdgWire:
 	var mk := OcgBRepBuilderAPIMakeWire.new()
-	for e in edges:
-		mk.add_g(e._wrapped)
-	return BdgWire.new(mk.wire())
+	for obj in edges:
+		if obj is BdgEdge:
+			if obj._wrapped != null and not obj._wrapped.is_null():
+				var te := OcgTopoDSShape.cast_edge(obj._wrapped)
+				if te != null:
+					mk.add_g(te)
+		elif obj is BdgWire:
+			if obj._wrapped != null and not obj._wrapped.is_null():
+				var tw := OcgTopoDSShape.cast_wire(obj._wrapped)
+				if tw != null:
+					mk.add_I(tw)
+		elif obj is BdgShape:
+			for e in (obj as BdgShape).edges():
+				if e._wrapped != null and not e._wrapped.is_null():
+					var te := OcgTopoDSShape.cast_edge(e._wrapped)
+					if te != null:
+						mk.add_g(te)
+	if mk.is_done():
+		return BdgWire.new(mk.wire())
+	return null
 
 ## Create a wire from a sequence of points as straight segments
 static func make_polygon(points: Array, close: bool = true) -> BdgWire:
@@ -153,7 +170,7 @@ static func combine(edges: Array) -> Array:
 					progressed = true
 					break
 		var w := mk.wire()
-		if not w.is_null():
+		if w != null and not w.is_null():
 			wires.append(BdgWire.new(w))
 	return wires
 
@@ -218,24 +235,14 @@ func fillet_2d(radius: float, vertices: Array = [], plane: BdgPlane = null) -> B
 		if phi < 1e-4:
 			continue
 		var half := phi / 2.0
-		var center := cur + (-u1 + u2).normalized() * (radius / sin(half))
 		var L := radius / tan(half)
 		var tp1 := cur - u1 * L
 		var tp2 := cur + u2 * L
 		t1[i] = tp1
 		t2[i] = tp2
-		var dx := plane.x_dir
-		var dy := plane.y_dir
-		var a1 := atan2((tp1 - center).dot(dy), (tp1 - center).dot(dx))
-		var a2 := atan2((tp2 - center).dot(dy), (tp2 - center).dot(dx))
-		var d := a2 - a1
-		while d > PI:
-			d -= 2.0 * PI
-		while d < -PI:
-			d += 2.0 * PI
-		if absf(d) < 1e-6:
-			continue
-		arc_edges.append(BdgEdge.make_center_arc(center, radius, rad_to_deg(a1), rad_to_deg(d), plane))
+		var arc := BdgEdge.make_tangent_arc(tp1, u1, tp2)
+		if arc != null and not arc.is_null():
+			arc_edges.append(arc)
 
 	var seg_edges: Array = []
 	var seg_count := n if is_loop else n - 1
@@ -250,6 +257,103 @@ func fillet_2d(radius: float, vertices: Array = [], plane: BdgPlane = null) -> B
 		return self
 	var wires := BdgWire.combine(all_edges)
 	return wires[0] if not wires.is_empty() else self
+
+## 2D chamfer of planar wire corners (straight-line edges only).
+## length: distance cut back from the corner. length2: optional asymmetric distance.
+func chamfer_2d(length: float, length2: float = 0.0, vertices: Array = [], plane: BdgPlane = null) -> BdgWire:
+	if length <= 0.0:
+		push_error("chamfer_2d length must be positive")
+		return self
+	var l1 := length
+	var l2 := length2 if length2 > 0.0 else length
+	var chain := _ordered_points_edges()
+	var pts: Array = chain[0]
+	var es: Array = chain[1]
+	if pts.size() < 3:
+		push_error("chamfer_2d needs at least a 3-corner wire")
+		return self
+	if plane == null:
+		plane = _fit_plane(pts)
+	var n := pts.size()
+	var is_loop := es.size() == n
+
+	var chamfer_flags := {}
+	if vertices.is_empty():
+		for i in n:
+			chamfer_flags[i] = true
+	else:
+		for v in vertices:
+			var vp: Vector3 = v if v is Vector3 else v.center()
+			var idx := -1
+			var best_d := 1e9
+			for i in n:
+				var d: float = pts[i].distance_to(vp)
+				if d < best_d:
+					best_d = d
+					idx = i
+			if idx >= 0 and best_d < 1e-3:
+				chamfer_flags[idx] = true
+	if not is_loop:
+		chamfer_flags.erase(0)
+		chamfer_flags.erase(n - 1)
+
+	var t1 := {}
+	var t2 := {}
+	var chamfer_edges: Array = []
+	for i in n:
+		if not chamfer_flags.has(i):
+			continue
+		if not is_loop and (i == 0 or i == n - 1):
+			continue
+		var prev: Vector3 = pts[(i - 1 + n) % n] if is_loop else pts[i - 1]
+		var cur: Vector3 = pts[i]
+		var nxt: Vector3 = pts[(i + 1) % n] if is_loop else pts[i + 1]
+		var e_prev: BdgEdge = es[(i - 1 + n) % n] if is_loop else es[i - 1]
+		var e_next: BdgEdge = es[i]
+		if e_prev.geom_type() != BdgEnums.GeomType.LINE or e_next.geom_type() != BdgEnums.GeomType.LINE:
+			push_warning("chamfer_2d only supports straight-line corners; skipping")
+			continue
+		var u1 := (cur - prev).normalized()
+		var u2 := (nxt - cur).normalized()
+		var tp1 := cur - u1 * l1
+		var tp2 := cur + u2 * l2
+		t1[i] = tp1
+		t2[i] = tp2
+		chamfer_edges.append(BdgEdge.make_line(tp1, tp2))
+
+	var seg_edges: Array = []
+	var seg_count := n if is_loop else n - 1
+	for i in seg_count:
+		var from_p: Vector3 = t2[i] if chamfer_flags.has(i) else pts[i]
+		var to_p: Vector3 = t1[(i + 1) % n] if chamfer_flags.has((i + 1) % n) else pts[(i + 1) % n]
+		if from_p.distance_to(to_p) > 1e-7:
+			seg_edges.append(BdgEdge.make_line(from_p, to_p))
+
+	var all_edges := seg_edges + chamfer_edges
+	if all_edges.is_empty():
+		return self
+	var wires := BdgWire.combine(all_edges)
+	return wires[0] if not wires.is_empty() else self
+
+## Close this wire by adding an edge from its end point to its start point if open.
+func close() -> BdgWire:
+	if is_closed():
+		return self
+	var es := edges()
+	if es.is_empty():
+		return self
+	var head: Vector3 = _edge_head()
+	var tail: Vector3 = _edge_tail()
+	if head.distance_to(tail) > 1e-6:
+		var closing_edge := BdgEdge.make_line(tail, head)
+		es.append(closing_edge)
+	var wires := BdgWire.combine(es)
+	return wires[0] if not wires.is_empty() else self
+
+## Return edges ordered end-to-end sequentially.
+func order_edges() -> Array:
+	var chain := _ordered_points_edges()
+	return chain[1]
 
 ## Order the wire edges into a closed chain. Returns [points, edges] where
 ## edges[i] runs exactly from points[i] to points[(i+1) % n].
@@ -316,3 +420,4 @@ func _edge_head() -> Vector3:
 ## Is this wire closed (a loop)?
 func is_manifold() -> bool:
 	return is_closed()
+

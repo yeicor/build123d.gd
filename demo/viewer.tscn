@@ -1,16 +1,1204 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://dm0cw5u2secg1"]
 
-[ext_resource type="Script" path="res://demo/viewer.gd" id="1_viewer"]
+[ext_resource type="Script" uid="uid://dvmp0dssm8wge" path="res://demo/viewer.gd" id="1_viewer"]
+[ext_resource type="Script" uid="uid://djkqeklmwdeos" path="res://demo/viewer/ViewerCamera3D.gd" id="2_cam"]
+[ext_resource type="Script" uid="uid://67pk3hknotyy" path="res://demo/viewer/ViewerView3D.gd" id="3_view"]
+[ext_resource type="Script" uid="uid://70g2qs78e34q" path="res://demo/viewer/ViewerToolbar.gd" id="4_toolbar"]
+[ext_resource type="Script" uid="uid://c1xcj07qsaqym" path="res://demo/viewer/ViewerCodeEditor.gd" id="5_editor"]
+[ext_resource type="Script" uid="uid://cavya2w8sc1uq" path="res://demo/viewer/ViewerApiBrowser.gd" id="6_api"]
+[ext_resource type="Script" uid="uid://h5w7u6ud5vcy" path="res://demo/viewer/ViewerSettingsTab.gd" id="7_settings"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
-background_color = Color(0.18, 0.18, 0.22, 1)
+background_color = Color(0.11, 0.12, 0.15, 1)
 ambient_light_source = 2
-ambient_light_color = Color(1, 1, 1, 1)
-ambient_light_energy = 0.5
+ambient_light_color = Color(0.32, 0.35, 0.42, 1)
 
-[node name="Viewer" type="Node3D"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cnv6x"]
+render_priority = 2
+shading_mode = 0
+albedo_color = Color(0.06, 0.07, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u4jvb"]
+render_priority = 3
+shading_mode = 0
+albedo_color = Color(0.98, 0.68, 0.16, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xkj0b"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.25, 0.28, 0.35, 0.4)
+
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_o0b1m"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uapen"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.13, 0.15, 0.18, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eh5o7"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.08, 0.09, 0.12, 0.1425)
+
+[sub_resource type="CodeHighlighter" id="CodeHighlighter_t2dwm"]
+number_color = Color(1, 0.76, 0.44, 1)
+symbol_color = Color(0.85, 0.85, 0.9, 1)
+function_color = Color(0.4, 0.8, 1, 1)
+member_variable_color = Color(0.8, 0.9, 1, 1)
+keyword_colors = {
+"Align.CENTER": Color(0.82, 0.66, 1, 1),
+"Align.MAX": Color(0.82, 0.66, 1, 1),
+"Align.MIN": Color(0.82, 0.66, 1, 1),
+"Array": Color(0.4, 0.9, 0.9, 1),
+"Bdg": Color(0.95, 0.85, 0.35, 1),
+"Bdg.Align.CENTER": Color(0.82, 0.66, 1, 1),
+"Bdg.Align.MAX": Color(0.82, 0.66, 1, 1),
+"Bdg.Align.MIN": Color(0.82, 0.66, 1, 1),
+"Bdg.FT": Color(0.82, 0.66, 1, 1),
+"Bdg.GeomType": Color(0.82, 0.66, 1, 1),
+"Bdg.GeomType.CIRCLE": Color(0.82, 0.66, 1, 1),
+"Bdg.GeomType.LINE": Color(0.82, 0.66, 1, 1),
+"Bdg.GeomType.PLANE": Color(0.82, 0.66, 1, 1),
+"Bdg.IN": Color(0.82, 0.66, 1, 1),
+"Bdg.MM": Color(0.82, 0.66, 1, 1),
+"Bdg.Mode.ADD": Color(0.82, 0.66, 1, 1),
+"Bdg.Mode.INTERSECT": Color(0.82, 0.66, 1, 1),
+"Bdg.Mode.SUBTRACT": Color(0.82, 0.66, 1, 1),
+"Bdg.THOU": Color(0.82, 0.66, 1, 1),
+"Bdg.add": Color(0.82, 0.66, 1, 1),
+"Bdg.airfoil": Color(0.82, 0.66, 1, 1),
+"Bdg.arc_3pt": Color(0.82, 0.66, 1, 1),
+"Bdg.assembly": Color(0.82, 0.66, 1, 1),
+"Bdg.at": Color(0.82, 0.66, 1, 1),
+"Bdg.axis": Color(0.82, 0.66, 1, 1),
+"Bdg.axis_x": Color(0.82, 0.66, 1, 1),
+"Bdg.axis_y": Color(0.82, 0.66, 1, 1),
+"Bdg.axis_z": Color(0.82, 0.66, 1, 1),
+"Bdg.bezier": Color(0.82, 0.66, 1, 1),
+"Bdg.blend_curve": Color(0.82, 0.66, 1, 1),
+"Bdg.box": Color(0.82, 0.66, 1, 1),
+"Bdg.build_line": Color(0.82, 0.66, 1, 1),
+"Bdg.build_part": Color(0.82, 0.66, 1, 1),
+"Bdg.build_sketch": Color(0.82, 0.66, 1, 1),
+"Bdg.center": Color(0.82, 0.66, 1, 1),
+"Bdg.center_arc": Color(0.82, 0.66, 1, 1),
+"Bdg.chamfer": Color(0.82, 0.66, 1, 1),
+"Bdg.circle": Color(0.82, 0.66, 1, 1),
+"Bdg.clean": Color(0.82, 0.66, 1, 1),
+"Bdg.cone": Color(0.82, 0.66, 1, 1),
+"Bdg.convex_polyhedron": Color(0.82, 0.66, 1, 1),
+"Bdg.counter_bore_hole": Color(0.82, 0.66, 1, 1),
+"Bdg.counter_sink_hole": Color(0.82, 0.66, 1, 1),
+"Bdg.cut": Color(0.82, 0.66, 1, 1),
+"Bdg.cylinder": Color(0.82, 0.66, 1, 1),
+"Bdg.delta": Color(0.82, 0.66, 1, 1),
+"Bdg.dimension_line": Color(0.82, 0.66, 1, 1),
+"Bdg.edges": Color(0.82, 0.66, 1, 1),
+"Bdg.edges_to_wires": Color(0.82, 0.66, 1, 1),
+"Bdg.ellipse": Color(0.82, 0.66, 1, 1),
+"Bdg.eval": Color(0.82, 0.66, 1, 1),
+"Bdg.export_dxf": Color(0.82, 0.66, 1, 1),
+"Bdg.export_gltf": Color(0.82, 0.66, 1, 1),
+"Bdg.export_obj": Color(0.82, 0.66, 1, 1),
+"Bdg.export_step": Color(0.82, 0.66, 1, 1),
+"Bdg.export_stl": Color(0.82, 0.66, 1, 1),
+"Bdg.export_svg": Color(0.82, 0.66, 1, 1),
+"Bdg.extrude": Color(0.82, 0.66, 1, 1),
+"Bdg.extrude_vec": Color(0.82, 0.66, 1, 1),
+"Bdg.faces": Color(0.82, 0.66, 1, 1),
+"Bdg.fillet": Color(0.82, 0.66, 1, 1),
+"Bdg.fillet_edges": Color(0.82, 0.66, 1, 1),
+"Bdg.fuse": Color(0.82, 0.66, 1, 1),
+"Bdg.geom_type": Color(0.82, 0.66, 1, 1),
+"Bdg.grid_locations": Color(0.82, 0.66, 1, 1),
+"Bdg.grid_locations_list": Color(0.82, 0.66, 1, 1),
+"Bdg.helix": Color(0.82, 0.66, 1, 1),
+"Bdg.hex_bolt": Color(0.82, 0.66, 1, 1),
+"Bdg.hex_locations": Color(0.82, 0.66, 1, 1),
+"Bdg.hex_locations_list": Color(0.82, 0.66, 1, 1),
+"Bdg.hex_nut": Color(0.82, 0.66, 1, 1),
+"Bdg.hole": Color(0.82, 0.66, 1, 1),
+"Bdg.import_step": Color(0.82, 0.66, 1, 1),
+"Bdg.intersect": Color(0.82, 0.66, 1, 1),
+"Bdg.last_edge": Color(0.82, 0.66, 1, 1),
+"Bdg.last_face": Color(0.82, 0.66, 1, 1),
+"Bdg.last_shape": Color(0.82, 0.66, 1, 1),
+"Bdg.last_solid": Color(0.82, 0.66, 1, 1),
+"Bdg.last_wire": Color(0.82, 0.66, 1, 1),
+"Bdg.length": Color(0.82, 0.66, 1, 1),
+"Bdg.line": Color(0.82, 0.66, 1, 1),
+"Bdg.location": Color(0.82, 0.66, 1, 1),
+"Bdg.locations": Color(0.82, 0.66, 1, 1),
+"Bdg.loft": Color(0.82, 0.66, 1, 1),
+"Bdg.make_box": Color(0.82, 0.66, 1, 1),
+"Bdg.make_circle": Color(0.82, 0.66, 1, 1),
+"Bdg.make_compound": Color(0.82, 0.66, 1, 1),
+"Bdg.make_cylinder": Color(0.82, 0.66, 1, 1),
+"Bdg.make_face": Color(0.82, 0.66, 1, 1),
+"Bdg.make_from_wires": Color(0.82, 0.66, 1, 1),
+"Bdg.make_line": Color(0.82, 0.66, 1, 1),
+"Bdg.make_loft": Color(0.82, 0.66, 1, 1),
+"Bdg.make_pipe_shell": Color(0.82, 0.66, 1, 1),
+"Bdg.make_polygon": Color(0.82, 0.66, 1, 1),
+"Bdg.make_radius_arc": Color(0.82, 0.66, 1, 1),
+"Bdg.make_rect": Color(0.82, 0.66, 1, 1),
+"Bdg.make_rect_wire": Color(0.82, 0.66, 1, 1),
+"Bdg.make_rounded_rect": Color(0.82, 0.66, 1, 1),
+"Bdg.make_slot": Color(0.82, 0.66, 1, 1),
+"Bdg.make_sphere": Color(0.82, 0.66, 1, 1),
+"Bdg.make_spline": Color(0.82, 0.66, 1, 1),
+"Bdg.make_wire": Color(0.82, 0.66, 1, 1),
+"Bdg.move": Color(0.82, 0.66, 1, 1),
+"Bdg.normal_at": Color(0.82, 0.66, 1, 1),
+"Bdg.offset_shape": Color(0.82, 0.66, 1, 1),
+"Bdg.pack": Color(0.82, 0.66, 1, 1),
+"Bdg.param_at_distance": Color(0.82, 0.66, 1, 1),
+"Bdg.polar": Color(0.82, 0.66, 1, 1),
+"Bdg.polar_locations": Color(0.82, 0.66, 1, 1),
+"Bdg.polygon": Color(0.82, 0.66, 1, 1),
+"Bdg.polyline": Color(0.82, 0.66, 1, 1),
+"Bdg.position_at": Color(0.82, 0.66, 1, 1),
+"Bdg.rect": Color(0.82, 0.66, 1, 1),
+"Bdg.regular_polygon": Color(0.82, 0.66, 1, 1),
+"Bdg.revolve": Color(0.82, 0.66, 1, 1),
+"Bdg.revolve_axis": Color(0.82, 0.66, 1, 1),
+"Bdg.rotate": Color(0.82, 0.66, 1, 1),
+"Bdg.rounded_rect": Color(0.82, 0.66, 1, 1),
+"Bdg.scaled": Color(0.82, 0.66, 1, 1),
+"Bdg.shape_list": Color(0.82, 0.66, 1, 1),
+"Bdg.slot_c2c": Color(0.82, 0.66, 1, 1),
+"Bdg.slot_overall": Color(0.82, 0.66, 1, 1),
+"Bdg.solids": Color(0.82, 0.66, 1, 1),
+"Bdg.sort_by": Color(0.82, 0.66, 1, 1),
+"Bdg.sphere": Color(0.82, 0.66, 1, 1),
+"Bdg.spline": Color(0.82, 0.66, 1, 1),
+"Bdg.sweep": Color(0.82, 0.66, 1, 1),
+"Bdg.tangent_at": Color(0.82, 0.66, 1, 1),
+"Bdg.technical_drawing": Color(0.82, 0.66, 1, 1),
+"Bdg.text": Color(0.82, 0.66, 1, 1),
+"Bdg.to_plane": Color(0.82, 0.66, 1, 1),
+"Bdg.torus": Color(0.82, 0.66, 1, 1),
+"Bdg.translate": Color(0.82, 0.66, 1, 1),
+"Bdg.vertices": Color(0.82, 0.66, 1, 1),
+"Bdg.wedge": Color(0.82, 0.66, 1, 1),
+"Bdg.wires": Color(0.82, 0.66, 1, 1),
+"BdgAirfoil": Color(0.95, 0.85, 0.35, 1),
+"BdgAssembly": Color(0.95, 0.85, 0.35, 1),
+"BdgAxis": Color(0.95, 0.85, 0.35, 1),
+"BdgCompound": Color(0.95, 0.85, 0.35, 1),
+"BdgDSL": Color(0.95, 0.85, 0.35, 1),
+"BdgDocRegistry": Color(0.95, 0.85, 0.35, 1),
+"BdgEdge": Color(0.95, 0.85, 0.35, 1),
+"BdgEnums": Color(0.95, 0.85, 0.35, 1),
+"BdgFace": Color(0.95, 0.85, 0.35, 1),
+"BdgLocation": Color(0.95, 0.85, 0.35, 1),
+"BdgLocations": Color(0.95, 0.85, 0.35, 1),
+"BdgPack": Color(0.95, 0.85, 0.35, 1),
+"BdgPart": Color(0.95, 0.85, 0.35, 1),
+"BdgPlane": Color(0.95, 0.85, 0.35, 1),
+"BdgShape": Color(0.95, 0.85, 0.35, 1),
+"BdgSketch": Color(0.95, 0.85, 0.35, 1),
+"BdgSolid": Color(0.95, 0.85, 0.35, 1),
+"BdgVertex": Color(0.95, 0.85, 0.35, 1),
+"BdgWire": Color(0.95, 0.85, 0.35, 1),
+"Callable": Color(0.4, 0.9, 0.9, 1),
+"Color": Color(0.4, 0.9, 0.9, 1),
+"Dictionary": Color(0.4, 0.9, 0.9, 1),
+"FT": Color(0.82, 0.66, 1, 1),
+"GeomType": Color(0.82, 0.66, 1, 1),
+"GeomType.CIRCLE": Color(0.82, 0.66, 1, 1),
+"GeomType.LINE": Color(0.82, 0.66, 1, 1),
+"GeomType.PLANE": Color(0.82, 0.66, 1, 1),
+"IN": Color(0.82, 0.66, 1, 1),
+"MM": Color(0.82, 0.66, 1, 1),
+"Mode.ADD": Color(0.82, 0.66, 1, 1),
+"Mode.INTERSECT": Color(0.82, 0.66, 1, 1),
+"Mode.SUBTRACT": Color(0.82, 0.66, 1, 1),
+"PI": Color(0.4, 0.9, 0.9, 1),
+"Quaternion": Color(0.4, 0.9, 0.9, 1),
+"String": Color(0.4, 0.9, 0.9, 1),
+"THOU": Color(0.82, 0.66, 1, 1),
+"Transform3D": Color(0.4, 0.9, 0.9, 1),
+"Vector2": Color(0.4, 0.9, 0.9, 1),
+"Vector3": Color(0.4, 0.9, 0.9, 1),
+"absf": Color(0.4, 0.9, 0.9, 1),
+"add": Color(0.82, 0.66, 1, 1),
+"airfoil": Color(0.82, 0.66, 1, 1),
+"arc_3pt": Color(0.82, 0.66, 1, 1),
+"assembly": Color(0.82, 0.66, 1, 1),
+"at": Color(0.82, 0.66, 1, 1),
+"axis": Color(0.82, 0.66, 1, 1),
+"axis_x": Color(0.82, 0.66, 1, 1),
+"axis_y": Color(0.82, 0.66, 1, 1),
+"axis_z": Color(0.82, 0.66, 1, 1),
+"bezier": Color(0.82, 0.66, 1, 1),
+"blend_curve": Color(0.82, 0.66, 1, 1),
+"bool": Color(0.4, 0.9, 0.9, 1),
+"box": Color(0.82, 0.66, 1, 1),
+"break": Color(1, 0.45, 0.6, 1),
+"build_line": Color(0.82, 0.66, 1, 1),
+"build_part": Color(0.82, 0.66, 1, 1),
+"build_sketch": Color(0.82, 0.66, 1, 1),
+"center": Color(0.82, 0.66, 1, 1),
+"center_arc": Color(0.82, 0.66, 1, 1),
+"chamfer": Color(0.82, 0.66, 1, 1),
+"circle": Color(0.82, 0.66, 1, 1),
+"class_name": Color(1, 0.45, 0.6, 1),
+"clean": Color(0.82, 0.66, 1, 1),
+"cone": Color(0.82, 0.66, 1, 1),
+"continue": Color(1, 0.45, 0.6, 1),
+"convex_polyhedron": Color(0.82, 0.66, 1, 1),
+"cos": Color(0.4, 0.9, 0.9, 1),
+"counter_bore_hole": Color(0.82, 0.66, 1, 1),
+"counter_sink_hole": Color(0.82, 0.66, 1, 1),
+"cut": Color(0.82, 0.66, 1, 1),
+"cylinder": Color(0.82, 0.66, 1, 1),
+"deg_to_rad": Color(0.4, 0.9, 0.9, 1),
+"delta": Color(0.82, 0.66, 1, 1),
+"dimension_line": Color(0.82, 0.66, 1, 1),
+"edges": Color(0.82, 0.66, 1, 1),
+"edges_to_wires": Color(0.82, 0.66, 1, 1),
+"elif": Color(1, 0.45, 0.6, 1),
+"ellipse": Color(0.82, 0.66, 1, 1),
+"else": Color(1, 0.45, 0.6, 1),
+"eval": Color(0.82, 0.66, 1, 1),
+"export_dxf": Color(0.82, 0.66, 1, 1),
+"export_gltf": Color(0.82, 0.66, 1, 1),
+"export_obj": Color(0.82, 0.66, 1, 1),
+"export_step": Color(0.82, 0.66, 1, 1),
+"export_stl": Color(0.82, 0.66, 1, 1),
+"export_svg": Color(0.82, 0.66, 1, 1),
+"extends": Color(1, 0.45, 0.6, 1),
+"extrude": Color(0.82, 0.66, 1, 1),
+"extrude_vec": Color(0.82, 0.66, 1, 1),
+"faces": Color(0.82, 0.66, 1, 1),
+"fillet": Color(0.82, 0.66, 1, 1),
+"fillet_edges": Color(0.82, 0.66, 1, 1),
+"float": Color(0.4, 0.9, 0.9, 1),
+"for": Color(1, 0.45, 0.6, 1),
+"func": Color(1, 0.45, 0.6, 1),
+"fuse": Color(0.82, 0.66, 1, 1),
+"geom_type": Color(0.82, 0.66, 1, 1),
+"grid_locations": Color(0.82, 0.66, 1, 1),
+"grid_locations_list": Color(0.82, 0.66, 1, 1),
+"helix": Color(0.82, 0.66, 1, 1),
+"hex_bolt": Color(0.82, 0.66, 1, 1),
+"hex_locations": Color(0.82, 0.66, 1, 1),
+"hex_locations_list": Color(0.82, 0.66, 1, 1),
+"hex_nut": Color(0.82, 0.66, 1, 1),
+"hole": Color(0.82, 0.66, 1, 1),
+"if": Color(1, 0.45, 0.6, 1),
+"import_step": Color(0.82, 0.66, 1, 1),
+"in": Color(1, 0.45, 0.6, 1),
+"int": Color(0.4, 0.9, 0.9, 1),
+"intersect": Color(0.82, 0.66, 1, 1),
+"last_edge": Color(0.82, 0.66, 1, 1),
+"last_face": Color(0.82, 0.66, 1, 1),
+"last_shape": Color(0.82, 0.66, 1, 1),
+"last_solid": Color(0.82, 0.66, 1, 1),
+"last_wire": Color(0.82, 0.66, 1, 1),
+"length": Color(0.82, 0.66, 1, 1),
+"line": Color(0.82, 0.66, 1, 1),
+"location": Color(0.82, 0.66, 1, 1),
+"locations": Color(0.82, 0.66, 1, 1),
+"loft": Color(0.82, 0.66, 1, 1),
+"make_box": Color(0.82, 0.66, 1, 1),
+"make_circle": Color(0.82, 0.66, 1, 1),
+"make_compound": Color(0.82, 0.66, 1, 1),
+"make_cylinder": Color(0.82, 0.66, 1, 1),
+"make_face": Color(0.82, 0.66, 1, 1),
+"make_from_wires": Color(0.82, 0.66, 1, 1),
+"make_line": Color(0.82, 0.66, 1, 1),
+"make_loft": Color(0.82, 0.66, 1, 1),
+"make_pipe_shell": Color(0.82, 0.66, 1, 1),
+"make_polygon": Color(0.82, 0.66, 1, 1),
+"make_radius_arc": Color(0.82, 0.66, 1, 1),
+"make_rect": Color(0.82, 0.66, 1, 1),
+"make_rect_wire": Color(0.82, 0.66, 1, 1),
+"make_rounded_rect": Color(0.82, 0.66, 1, 1),
+"make_slot": Color(0.82, 0.66, 1, 1),
+"make_sphere": Color(0.82, 0.66, 1, 1),
+"make_spline": Color(0.82, 0.66, 1, 1),
+"make_wire": Color(0.82, 0.66, 1, 1),
+"match": Color(1, 0.45, 0.6, 1),
+"maxf": Color(0.4, 0.9, 0.9, 1),
+"minf": Color(0.4, 0.9, 0.9, 1),
+"move": Color(0.82, 0.66, 1, 1),
+"normal_at": Color(0.82, 0.66, 1, 1),
+"offset_shape": Color(0.82, 0.66, 1, 1),
+"pack": Color(0.82, 0.66, 1, 1),
+"param_at_distance": Color(0.82, 0.66, 1, 1),
+"pass": Color(1, 0.45, 0.6, 1),
+"polar": Color(0.82, 0.66, 1, 1),
+"polar_locations": Color(0.82, 0.66, 1, 1),
+"polygon": Color(0.82, 0.66, 1, 1),
+"polyline": Color(0.82, 0.66, 1, 1),
+"position_at": Color(0.82, 0.66, 1, 1),
+"rad_to_deg": Color(0.4, 0.9, 0.9, 1),
+"rect": Color(0.82, 0.66, 1, 1),
+"regular_polygon": Color(0.82, 0.66, 1, 1),
+"return": Color(1, 0.45, 0.6, 1),
+"revolve": Color(0.82, 0.66, 1, 1),
+"revolve_axis": Color(0.82, 0.66, 1, 1),
+"rotate": Color(0.82, 0.66, 1, 1),
+"rounded_rect": Color(0.82, 0.66, 1, 1),
+"scaled": Color(0.82, 0.66, 1, 1),
+"shape_list": Color(0.82, 0.66, 1, 1),
+"sin": Color(0.4, 0.9, 0.9, 1),
+"slot_c2c": Color(0.82, 0.66, 1, 1),
+"slot_overall": Color(0.82, 0.66, 1, 1),
+"solids": Color(0.82, 0.66, 1, 1),
+"sort_by": Color(0.82, 0.66, 1, 1),
+"sphere": Color(0.82, 0.66, 1, 1),
+"spline": Color(0.82, 0.66, 1, 1),
+"sqrt": Color(0.4, 0.9, 0.9, 1),
+"static": Color(1, 0.45, 0.6, 1),
+"sweep": Color(0.82, 0.66, 1, 1),
+"tan": Color(0.4, 0.9, 0.9, 1),
+"tangent_at": Color(0.82, 0.66, 1, 1),
+"technical_drawing": Color(0.82, 0.66, 1, 1),
+"text": Color(0.82, 0.66, 1, 1),
+"to_plane": Color(0.82, 0.66, 1, 1),
+"torus": Color(0.82, 0.66, 1, 1),
+"translate": Color(0.82, 0.66, 1, 1),
+"var": Color(1, 0.45, 0.6, 1),
+"vertices": Color(0.82, 0.66, 1, 1),
+"wedge": Color(0.82, 0.66, 1, 1),
+"while": Color(1, 0.45, 0.6, 1),
+"wires": Color(0.82, 0.66, 1, 1)
+}
+color_regions = {
+"\" \"": Color(0.65, 0.9, 0.5, 1),
+"\"\"\" \"\"\"": Color(0.65, 0.9, 0.5, 1),
+"#": Color(0.45, 0.55, 0.65, 1)
+}
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xsbn6"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08, 0.1, 0.13, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.45, 0.7, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wbvas"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.35, 0.1, 0.12, 0.95)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t8qwg"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.12, 0.14, 0.18, 0.1425)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pohrh"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.12, 0.16, 0.1425)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dt6td"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.12, 0.14, 0.18, 0.1425)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Viewer" type="Node3D" unique_id=1199562740]
 script = ExtResource("1_viewer")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="Viewport3D" type="Node3D" parent="." unique_id=173900220]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Viewport3D" unique_id=629228316]
 environment = SubResource("Environment_1")
+
+[node name="ViewerCamera3D" type="Node3D" parent="Viewport3D" unique_id=1713489506]
+script = ExtResource("2_cam")
+
+[node name="Camera" type="Camera3D" parent="Viewport3D/ViewerCamera3D" unique_id=1831830717]
+current = true
+
+[node name="ViewerView3D" type="Node3D" parent="Viewport3D" unique_id=2042822212]
+script = ExtResource("3_view")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="Viewport3D/ViewerView3D" unique_id=1273410084]
+transform = Transform3D(0.81915206, -0.4055798, 0.4055798, 0, 0.70710677, 0.70710677, -0.57357645, -0.579228, 0.579228, 0, 0, 0)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="Viewport3D/ViewerView3D" unique_id=1908421325]
+transform = Transform3D(-0.81915206, 0.24240388, -0.5198368, 0, 0.90630776, 0.42261827, 0.57357645, 0.34618863, -0.74240386, 0, 0, 0)
+
+[node name="RimLight" type="DirectionalLight3D" parent="Viewport3D/ViewerView3D" unique_id=1933645309]
+transform = Transform3D(-1, -6.181724e-08, -6.181724e-08, 0, 0.70710677, -0.70710677, 8.742278e-08, -0.70710677, -0.70710677, 0, 0, 0)
+light_energy = 0.35
+
+[node name="Model" type="Node3D" parent="Viewport3D/ViewerView3D" unique_id=1707593307]
+
+[node name="Edges" type="MultiMeshInstance3D" parent="Viewport3D/ViewerView3D" unique_id=367924904]
+material_override = SubResource("StandardMaterial3D_cnv6x")
+
+[node name="Vertices" type="MultiMeshInstance3D" parent="Viewport3D/ViewerView3D" unique_id=908499639]
+material_override = SubResource("StandardMaterial3D_u4jvb")
+
+[node name="Grid" type="Node3D" parent="Viewport3D/ViewerView3D" unique_id=159466318]
+
+[node name="GridMesh" type="MeshInstance3D" parent="Viewport3D/ViewerView3D/Grid" unique_id=885456944]
+material_override = SubResource("StandardMaterial3D_xkj0b")
+mesh = SubResource("ImmediateMesh_o0b1m")
+
+[node name="UI" type="Control" parent="." unique_id=621580310]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RootVBox" type="VBoxContainer" parent="UI" unique_id=654056006]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="Toolbar" type="PanelContainer" parent="UI/RootVBox" unique_id=1496772273]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_uapen")
+script = ExtResource("4_toolbar")
+
+[node name="ToolbarRow" type="HBoxContainer" parent="UI/RootVBox/Toolbar" unique_id=570459984]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ToggleEditorBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=504943493]
+layout_mode = 2
+tooltip_text = "Switch to 3D View (F4 / Ctrl+E)"
+toggle_mode = true
+button_pressed = true
+text = "👁 View 3D"
+
+[node name="ToolbarSep" type="VSeparator" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=278005183]
+layout_mode = 2
+
+[node name="ExampleDropdown" type="OptionButton" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=39147061]
+layout_mode = 2
+selected = 0
+item_count = 13
+popup/item_0/text = "1. Boxes on Faces"
+popup/item_0/id = 0
+popup/item_1/text = "2. Pillow Block"
+popup/item_1/id = 1
+popup/item_2/text = "3. Parametric Lego Brick"
+popup/item_2/id = 2
+popup/item_3/text = "4. Drawer Handle"
+popup/item_3/id = 3
+popup/item_4/text = "5. Porcelain Tea Cup"
+popup/item_4/id = 4
+popup/item_5/text = "6. 35x7.5mm DIN Rail"
+popup/item_5/id = 5
+popup/item_6/text = "7. Organic Fluted Vase"
+popup/item_6/id = 6
+popup/item_7/text = "8. CAD Hole Types"
+popup/item_7/id = 7
+popup/item_8/text = "9. Hex Grid Perforated Plate"
+popup/item_8/id = 8
+popup/item_9/text = "10. Cherry MX Key Cap"
+popup/item_9/id = 9
+popup/item_10/text = "11. Maker Coin with Detents"
+popup/item_10/id = 10
+popup/item_11/text = "12. Parametric Clock Face"
+popup/item_11/id = 11
+popup/item_12/text = "13. Canadian Flag Relief"
+popup/item_12/id = 12
+
+[node name="ResetBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=380656152]
+layout_mode = 2
+tooltip_text = "Reset current example code"
+text = "↺"
+
+[node name="RunBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=1025822301]
+layout_mode = 2
+tooltip_text = "Compile & Build Model (Ctrl+Enter)"
+theme_override_colors/font_color = Color(0.4, 1, 0.6, 1)
+text = "▶ Build"
+
+[node name="SpinnerLabel" type="Label" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=927083496]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "⟳"
+
+[node name="StatusLabel" type="Label" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=212550135]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "Build failed"
+
+[node name="ToolbarSpacer" type="Control" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=903067106]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CamIsoBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=250714293]
+layout_mode = 2
+text = "Iso"
+
+[node name="CamTopBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=785183069]
+layout_mode = 2
+text = "Top"
+
+[node name="CamFrontBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=268418301]
+layout_mode = 2
+text = "Front"
+
+[node name="CamRightBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=593256734]
+layout_mode = 2
+text = "Right"
+
+[node name="FocusBtn" type="Button" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=1703990338]
+layout_mode = 2
+tooltip_text = "Center camera on model"
+text = "⌖ Focus"
+
+[node name="ExportBtn" type="MenuButton" parent="UI/RootVBox/Toolbar/ToolbarRow" unique_id=328944887]
+layout_mode = 2
+text = "Export ▼"
+item_count = 10
+popup/item_0/text = "STEP Model (.step)"
+popup/item_0/id = 0
+popup/item_1/text = "STL Binary Mesh (.stl)"
+popup/item_1/id = 1
+popup/item_2/text = "STL ASCII Mesh (.stl)"
+popup/item_2/id = 2
+popup/item_3/text = "Wavefront OBJ (.obj)"
+popup/item_3/id = 3
+popup/item_4/text = "GLTF 2.0 (.gltf)"
+popup/item_4/id = 4
+popup/item_5/text = "Stanford PLY (.ply)"
+popup/item_5/id = 5
+popup/item_6/text = "Native BREP (.brep)"
+popup/item_6/id = 6
+popup/item_7/id = -1
+popup/item_7/separator = true
+popup/item_8/text = "2D SVG Drawing (.svg)"
+popup/item_8/id = 7
+popup/item_9/text = "2D DXF Drawing (.dxf)"
+popup/item_9/id = 8
+
+[node name="Workspace" type="Control" parent="UI/RootVBox" unique_id=191640066]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ViewPane" type="Control" parent="UI/RootVBox/Workspace" unique_id=1622007191]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ToastLabel" type="Label" parent="UI/RootVBox/Workspace/ViewPane" unique_id=1429756]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.05
+anchor_right = 0.5
+anchor_bottom = 0.05
+offset_left = -200.0
+offset_right = 200.0
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+horizontal_alignment = 1
+
+[node name="EditorContainer" type="PanelContainer" parent="UI/RootVBox/Workspace" unique_id=1742000417]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EditorLayout" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer" unique_id=1194127121]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Tabs" type="TabContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout" unique_id=452190695]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+current_tab = 0
+tab_0/title = "💻 Code Editor"
+tab_1/title = "📚 CAD API Reference"
+tab_2/title = "⚙️ Misc"
+
+[node name="CodeEditorTab" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs" unique_id=1244941819]
+layout_mode = 2
+script = ExtResource("5_editor")
+metadata/_tab_index = 0
+metadata/_tab_name = "💻 Code Editor"
+
+[node name="CodeBox" type="Control" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/CodeEditorTab" unique_id=848749526]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CodeEdit" type="CodeEdit" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/CodeEditorTab/CodeBox" unique_id=1955730074]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_eh5o7")
+text = "var base_box := Bdg.make_box(3.0, 3.0, 3.0)
+var main_shape: BdgShape = base_box
+
+for f in Bdg.faces(base_box):
+	var face: BdgFace = f as BdgFace
+	var p := Bdg.to_plane(face)
+	var rect := Bdg.make_rect(1.0, 2.0, p)
+	var rot_axis := Bdg.axis(p.origin, p.z_dir)
+	var rot_rect := Bdg.rotate(rect, rot_axis, 45.0) as BdgFace
+	var extr_part := Bdg.extrude_vec(rot_rect, p.z_dir * 0.1)
+	main_shape = Bdg.fuse(main_shape, extr_part)
+
+return main_shape"
+syntax_highlighter = SubResource("CodeHighlighter_t2dwm")
+highlight_all_occurrences = true
+highlight_current_line = true
+gutters_draw_line_numbers = true
+gutters_draw_fold_gutter = true
+code_completion_enabled = true
+code_completion_prefixes = Array[String](["B", "V", "C", "."])
+indent_automatic = true
+auto_brace_completion_enabled = true
+
+[node name="DocPopup" type="PanelContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/CodeEditorTab/CodeBox" unique_id=313187348]
+visible = false
+custom_minimum_size = Vector2(460, 180)
+layout_mode = 0
+offset_right = 480.0
+offset_bottom = 220.0
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_xsbn6")
+
+[node name="DocText" type="RichTextLabel" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/CodeEditorTab/CodeBox/DocPopup" unique_id=1657074907]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+focus_mode = 2
+bbcode_enabled = true
+selection_enabled = true
+
+[node name="ErrorPanel" type="PanelContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/CodeEditorTab" unique_id=42875404]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wbvas")
+
+[node name="ErrorLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/CodeEditorTab/ErrorPanel" unique_id=481711270]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+text = "Script did not return a valid BdgShape (got 0)."
+autowrap_mode = 3
+
+[node name="ApiTab" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs" unique_id=81153646]
+visible = false
+layout_mode = 2
+script = ExtResource("6_api")
+metadata/_tab_index = 1
+metadata/_tab_name = "📚 CAD API Reference"
+
+[node name="ApiToolbar" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab" unique_id=1417750702]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ApiCatLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiToolbar" unique_id=361563190]
+layout_mode = 2
+text = "Category:"
+
+[node name="ApiCategory" type="OptionButton" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiToolbar" unique_id=1304527633]
+layout_mode = 2
+selected = 0
+item_count = 12
+popup/item_0/text = "All"
+popup/item_0/id = 0
+popup/item_1/text = "Builders"
+popup/item_1/id = 1
+popup/item_2/text = "Patterns"
+popup/item_2/id = 2
+popup/item_3/text = "3D Solids"
+popup/item_3/id = 3
+popup/item_4/text = "2D Sketches"
+popup/item_4/id = 4
+popup/item_5/text = "1D Curves"
+popup/item_5/id = 5
+popup/item_6/text = "Operations"
+popup/item_6/id = 6
+popup/item_7/text = "Drafting"
+popup/item_7/id = 7
+popup/item_8/text = "Topology"
+popup/item_8/id = 8
+popup/item_9/text = "I/O"
+popup/item_9/id = 9
+popup/item_10/text = "Assemblies"
+popup/item_10/id = 10
+popup/item_11/text = "Constants"
+popup/item_11/id = 11
+
+[node name="ApiSearchLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiToolbar" unique_id=1137770727]
+layout_mode = 2
+text = "Search:"
+
+[node name="ApiSearch" type="LineEdit" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiToolbar" unique_id=910071531]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Filter methods (e.g. extrude, loft, box, pack)..."
+
+[node name="ApiSplit" type="HSplitContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab" unique_id=1193281744]
+layout_mode = 2
+size_flags_vertical = 3
+split_offsets = PackedInt32Array(240)
+split_offset = 240
+
+[node name="ApiList" type="ItemList" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiSplit" unique_id=1993828695]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 131
+item_0/text = "[Builders] Bdg.build_part"
+item_1/text = "[Builders] Bdg.build_sketch"
+item_2/text = "[Builders] Bdg.build_line"
+item_3/text = "[Builders] Bdg.last_shape"
+item_4/text = "[Builders] Bdg.last_solid"
+item_5/text = "[Builders] Bdg.last_face"
+item_6/text = "[Builders] Bdg.last_edge"
+item_7/text = "[Builders] Bdg.last_wire"
+item_8/text = "[Builders] Bdg.eval"
+item_9/text = "[Builders] Bdg.add"
+item_10/text = "[Patterns] Bdg.locations"
+item_11/text = "[Patterns] Bdg.grid_locations"
+item_12/text = "[Patterns] Bdg.hex_locations"
+item_13/text = "[Patterns] Bdg.polar_locations"
+item_14/text = "[Patterns] Bdg.location"
+item_15/text = "[Patterns] Bdg.polar"
+item_16/text = "[Patterns] Bdg.delta"
+item_17/text = "[3D Solids] Bdg.box"
+item_18/text = "[3D Solids] Bdg.cylinder"
+item_19/text = "[3D Solids] Bdg.sphere"
+item_20/text = "[3D Solids] Bdg.cone"
+item_21/text = "[3D Solids] Bdg.torus"
+item_22/text = "[3D Solids] Bdg.wedge"
+item_23/text = "[3D Solids] Bdg.convex_polyhedron"
+item_24/text = "[3D Solids] Bdg.hex_bolt"
+item_25/text = "[3D Solids] Bdg.hex_nut"
+item_26/text = "[2D Sketches] Bdg.rect"
+item_27/text = "[2D Sketches] Bdg.rounded_rect"
+item_28/text = "[2D Sketches] Bdg.circle"
+item_29/text = "[2D Sketches] Bdg.ellipse"
+item_30/text = "[2D Sketches] Bdg.regular_polygon"
+item_31/text = "[2D Sketches] Bdg.polygon"
+item_32/text = "[2D Sketches] Bdg.slot_overall"
+item_33/text = "[2D Sketches] Bdg.slot_c2c"
+item_34/text = "[2D Sketches] Bdg.make_face"
+item_35/text = "[1D Curves] Bdg.line"
+item_36/text = "[1D Curves] Bdg.polyline"
+item_37/text = "[1D Curves] Bdg.arc_3pt"
+item_38/text = "[1D Curves] Bdg.center_arc"
+item_39/text = "[1D Curves] Bdg.spline"
+item_40/text = "[1D Curves] Bdg.bezier"
+item_41/text = "[1D Curves] Bdg.helix"
+item_42/text = "[1D Curves] Bdg.airfoil"
+item_43/text = "[1D Curves] Bdg.blend_curve"
+item_44/text = "[Operations] Bdg.extrude"
+item_45/text = "[Operations] Bdg.revolve"
+item_46/text = "[Operations] Bdg.sweep"
+item_47/text = "[Operations] Bdg.loft"
+item_48/text = "[Operations] Bdg.fillet"
+item_49/text = "[Operations] Bdg.chamfer"
+item_50/text = "[Operations] Bdg.hole"
+item_51/text = "[Operations] Bdg.counter_bore_hole"
+item_52/text = "[Operations] Bdg.counter_sink_hole"
+item_53/text = "[Operations] Bdg.fuse"
+item_54/text = "[Operations] Bdg.cut"
+item_55/text = "[Operations] Bdg.intersect"
+item_56/text = "[Operations] Bdg.pack"
+item_57/text = "[Drafting] Bdg.text"
+item_58/text = "[Drafting] Bdg.technical_drawing"
+item_59/text = "[Drafting] Bdg.dimension_line"
+item_60/text = "[Topology] Bdg.vertices"
+item_61/text = "[Topology] Bdg.edges"
+item_62/text = "[Topology] Bdg.wires"
+item_63/text = "[Topology] Bdg.faces"
+item_64/text = "[Topology] Bdg.solids"
+item_65/text = "[Topology] Bdg.edges_to_wires"
+item_66/text = "[I/O] Bdg.export_step"
+item_67/text = "[I/O] Bdg.import_step"
+item_68/text = "[I/O] Bdg.export_stl"
+item_69/text = "[I/O] Bdg.export_obj"
+item_70/text = "[I/O] Bdg.export_gltf"
+item_71/text = "[I/O] Bdg.export_svg"
+item_72/text = "[I/O] Bdg.export_dxf"
+item_73/text = "[Assemblies] Bdg.assembly"
+item_74/text = "[Constants] Bdg.MM"
+item_75/text = "[Constants] Bdg.IN"
+item_76/text = "[Constants] Bdg.FT"
+item_77/text = "[Constants] Bdg.THOU"
+item_78/text = "[Constants] Bdg.Mode.ADD"
+item_79/text = "[Constants] Bdg.Mode.SUBTRACT"
+item_80/text = "[Constants] Bdg.Mode.INTERSECT"
+item_81/text = "[Constants] Bdg.Align.CENTER"
+item_82/text = "[Constants] Bdg.Align.MIN"
+item_83/text = "[Constants] Bdg.Align.MAX"
+item_84/text = "[Topology] Bdg.make_box"
+item_85/text = "[Topology] Bdg.make_cylinder"
+item_86/text = "[Topology] Bdg.make_sphere"
+item_87/text = "[Topology] Bdg.make_loft"
+item_88/text = "[Topology] Bdg.make_rect"
+item_89/text = "[Topology] Bdg.make_rounded_rect"
+item_90/text = "[Topology] Bdg.make_circle"
+item_91/text = "[Topology] Bdg.make_slot"
+item_92/text = "[Topology] Bdg.make_from_wires"
+item_93/text = "[Topology] Bdg.make_wire"
+item_94/text = "[Topology] Bdg.make_polygon"
+item_95/text = "[Topology] Bdg.make_rect_wire"
+item_96/text = "[Topology] Bdg.make_line"
+item_97/text = "[Topology] Bdg.make_radius_arc"
+item_98/text = "[Topology] Bdg.make_spline"
+item_99/text = "[Topology] Bdg.make_compound"
+item_100/text = "[Topology] Bdg.make_pipe_shell"
+item_101/text = "[Topology] Bdg.axis"
+item_102/text = "[Topology] Bdg.axis_x"
+item_103/text = "[Topology] Bdg.axis_y"
+item_104/text = "[Topology] Bdg.axis_z"
+item_105/text = "[Patterns] Bdg.grid_locations_list"
+item_106/text = "[Patterns] Bdg.hex_locations_list"
+item_107/text = "[Topology] Bdg.shape_list"
+item_108/text = "[Topology] Bdg.sort_by"
+item_109/text = "[Topology] Bdg.at"
+item_110/text = "[Operations] Bdg.translate"
+item_111/text = "[Operations] Bdg.scaled"
+item_112/text = "[Operations] Bdg.rotate"
+item_113/text = "[Operations] Bdg.move"
+item_114/text = "[Operations] Bdg.clean"
+item_115/text = "[Topology] Bdg.center"
+item_116/text = "[Topology] Bdg.geom_type"
+item_117/text = "[Topology] Bdg.to_plane"
+item_118/text = "[1D Curves] Bdg.length"
+item_119/text = "[1D Curves] Bdg.param_at_distance"
+item_120/text = "[1D Curves] Bdg.position_at"
+item_121/text = "[1D Curves] Bdg.tangent_at"
+item_122/text = "[1D Curves] Bdg.normal_at"
+item_123/text = "[Operations] Bdg.offset_shape"
+item_124/text = "[Operations] Bdg.fillet_edges"
+item_125/text = "[Operations] Bdg.extrude_vec"
+item_126/text = "[Operations] Bdg.revolve_axis"
+item_127/text = "[Constants] Bdg.GeomType"
+item_128/text = "[Constants] Bdg.GeomType.PLANE"
+item_129/text = "[Constants] Bdg.GeomType.CIRCLE"
+item_130/text = "[Constants] Bdg.GeomType.LINE"
+
+[node name="ApiDetail" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiSplit" unique_id=1940980851]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ApiDoc" type="RichTextLabel" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiSplit/ApiDetail" unique_id=452283611]
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+bbcode_enabled = true
+text = "[b][color=#6bc9ff]Bdg.build_part[/color][/b]  [color=#ffd166][Builders][/color]
+[color=#8cd3ff][b]Signature:[/b][/color] [code][color=#e0e8f5]Bdg.build_part(block: Callable) -> BdgPart[/color][/code]
+[color=#a0a8b4]Builds a 3D Part by executing a callback closure. 3D primitives and boolean operations inside the closure automatically combine into a final solid model.[/color]
+
+[b][color=#8cd3ff]Parameters:[/color][/b]
+  • [b][color=#ffd166]block[/color][/b] ([color=#85d7ff]Callable[/color]): [color=#cfd8dc]Closure callback that creates 3D shapes (e.g. box, cylinder, extrude).[/color]
+
+[b][color=#8cd3ff]Example:[/color][/b]
+[code][color=#a8ffb2]var part = Bdg.build_part(func():
+    Bdg.box(50.0, 30.0, 10.0)
+    Bdg.hole(4.0, 12.0)
+)[/color][/code]"
+selection_enabled = true
+
+[node name="ApiBtnRow" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiSplit/ApiDetail" unique_id=1822995247]
+layout_mode = 2
+
+[node name="ApiInsertBtn" type="Button" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/ApiTab/ApiSplit/ApiDetail/ApiBtnRow" unique_id=1908292181]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.6, 1)
+text = "➕ Insert Snippet into Code Editor"
+
+[node name="MiscTab" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs" unique_id=455091557]
+visible = false
+layout_mode = 2
+script = ExtResource("7_settings")
+metadata/_tab_index = 2
+metadata/_tab_name = "⚙️ Misc"
+
+[node name="SettingsScroll" type="ScrollContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab" unique_id=2081641229]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SettingsContent" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll" unique_id=611092766]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="AppearanceHeader" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=1159253000]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "🎨 Appearance & Visual Settings"
+
+[node name="AppearancePanel" type="PanelContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=1808230464]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_t8qwg")
+
+[node name="AppearanceBox" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel" unique_id=1422470748]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TransRow" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox" unique_id=2084547218]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TransTitle" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/TransRow" unique_id=620867920]
+layout_mode = 2
+text = "Editor Opacity:"
+
+[node name="TransparencySlider" type="HSlider" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/TransRow" unique_id=1021820109]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.05
+value = 0.15
+
+[node name="TransparencyLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/TransRow" unique_id=1564318453]
+layout_mode = 2
+text = "15%"
+
+[node name="ChecksRow" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox" unique_id=1475293926]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="EdgesCheck" type="CheckBox" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ChecksRow" unique_id=607130368]
+layout_mode = 2
+button_pressed = true
+text = "Show Edges (3D Tubes)"
+
+[node name="VerticesCheck" type="CheckBox" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ChecksRow" unique_id=2123539164]
+layout_mode = 2
+button_pressed = true
+text = "Show Vertices (3D Spheres)"
+
+[node name="GridCheck" type="CheckBox" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ChecksRow" unique_id=334346847]
+layout_mode = 2
+button_pressed = true
+text = "Show Ground Grid"
+
+[node name="ColorsRow" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox" unique_id=1324245049]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="EdgeColorLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ColorsRow" unique_id=1470293826]
+layout_mode = 2
+text = "Edge:"
+
+[node name="EdgeColorOpt" type="OptionButton" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ColorsRow" unique_id=1735400852]
+layout_mode = 2
+selected = 0
+item_count = 4
+popup/item_0/text = "Crisp Dark Ink"
+popup/item_0/id = 0
+popup/item_1/text = "High-Contrast White"
+popup/item_1/id = 1
+popup/item_2/text = "Blueprint Cyan"
+popup/item_2/id = 2
+popup/item_3/text = "Safety Orange"
+popup/item_3/id = 3
+
+[node name="VertexColorLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ColorsRow" unique_id=807370337]
+layout_mode = 2
+text = "Vertex:"
+
+[node name="VertexColorOpt" type="OptionButton" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ColorsRow" unique_id=1026638412]
+layout_mode = 2
+selected = 0
+item_count = 5
+popup/item_0/text = "Amber Gold"
+popup/item_0/id = 0
+popup/item_1/text = "Electric Cyan"
+popup/item_1/id = 1
+popup/item_2/text = "Safety Orange"
+popup/item_2/id = 2
+popup/item_3/text = "Pure White"
+popup/item_3/id = 3
+popup/item_4/text = "Emerald Green"
+popup/item_4/id = 4
+
+[node name="ThickLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ColorsRow" unique_id=1875695282]
+layout_mode = 2
+text = "Scale:"
+
+[node name="ThicknessSlider" type="HSlider" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/ColorsRow" unique_id=1803316896]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.5
+max_value = 3.0
+step = 0.1
+value = 1.0
+
+[node name="MaterialRow" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox" unique_id=1704201786]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MaterialLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/MaterialRow" unique_id=545649254]
+layout_mode = 2
+text = "PBR Material Preset:"
+
+[node name="MaterialOpt" type="OptionButton" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/MaterialRow" unique_id=871421924]
+layout_mode = 2
+selected = 0
+item_count = 7
+popup/item_0/text = "Precision CAD Checkerboard (Default)"
+popup/item_0/id = 0
+popup/item_1/text = "Machined Aluminum (Cross-Check)"
+popup/item_1/id = 1
+popup/item_2/text = "Technical Cyan Polymer (Blueprint Grid)"
+popup/item_2/id = 2
+popup/item_3/text = "High-Vis Safety Orange (Scale Grid)"
+popup/item_3/id = 3
+popup/item_4/text = "Silver Carbon Fiber (Bright Twill)"
+popup/item_4/id = 4
+popup/item_5/text = "Polished Gold / Brass (Fine Grid)"
+popup/item_5/id = 5
+popup/item_6/text = "Ceramic White Gloss (Measurement Grid)"
+popup/item_6/id = 6
+
+[node name="TexScaleRow" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox" unique_id=1534674211]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TexScaleTitle" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/TexScaleRow" unique_id=1801697901]
+layout_mode = 2
+text = "Texture Scale:"
+
+[node name="TexScaleSlider" type="HSlider" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/TexScaleRow" unique_id=441236239]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.01
+max_value = 1.0
+step = 0.01
+value = 0.05
+
+[node name="TexScaleLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/AppearancePanel/AppearanceBox/TexScaleRow" unique_id=1998708498]
+layout_mode = 2
+text = "0.05"
+
+[node name="AppearanceSep" type="HSeparator" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=1191714833]
+layout_mode = 2
+
+[node name="MeshHeader" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=364572697]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 0.6, 1)
+theme_override_font_sizes/font_size = 13
+text = "⚙️ Meshing Quality"
+
+[node name="MeshPanel" type="PanelContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=48025978]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pohrh")
+
+[node name="MeshBox" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MeshPanel" unique_id=1201719224]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ParallelCheck" type="CheckBox" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MeshPanel/MeshBox" unique_id=81523310]
+layout_mode = 2
+button_pressed = true
+text = "Parallel Meshing (Multi-threaded OpenCASCADE)"
+
+[node name="DetailRow" type="HBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MeshPanel/MeshBox" unique_id=2125889636]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DetailLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MeshPanel/MeshBox/DetailRow" unique_id=1825202237]
+layout_mode = 2
+text = "Mesh Detail:"
+
+[node name="MeshDetailSlider" type="HSlider" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MeshPanel/MeshBox/DetailRow" unique_id=1901872683]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.005
+max_value = 2.0
+step = 0.005
+value = 0.1
+
+[node name="MeshDetailLabel" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MeshPanel/MeshBox/DetailRow" unique_id=1670406464]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "0.10 mm"
+
+[node name="MeshHint" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MeshPanel/MeshBox" unique_id=1488829263]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "Lower = finer mesh, higher = faster. build123d display default: 0.1 mm"
+autowrap_mode = 3
+
+[node name="MeshSep" type="HSeparator" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=1150684707]
+layout_mode = 2
+
+[node name="MetricsHeader" type="Label" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=2079393788]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "📐 3D CAD Geometry Metrics"
+
+[node name="MetricsPanel" type="PanelContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent" unique_id=949218644]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dt6td")
+
+[node name="MetricsBox" type="VBoxContainer" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MetricsPanel" unique_id=1105978162]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StatsLabel" type="RichTextLabel" parent="UI/RootVBox/Workspace/EditorContainer/EditorLayout/Tabs/MiscTab/SettingsScroll/SettingsContent/MetricsPanel/MetricsBox" unique_id=1775557147]
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=#888888]No model built yet.[/color]"
+fit_content = true

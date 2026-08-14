@@ -76,6 +76,9 @@ func center() -> Vector3:
 func diagonal() -> float:
 	return size().length()
 
+func diagonal_length() -> float:
+	return size().length()
+
 func contains(p: Vector3, tolerance: float = 1e-6) -> bool:
 	return (
 		p.x >= min.x - tolerance and p.x <= max.x + tolerance

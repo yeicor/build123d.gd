@@ -110,8 +110,8 @@ static func make_wedge(
 # Operations (mirror Solid.fillet / Solid.chamfer / Solid.revolve)
 # ---------------------------------------------------------------------------
 
-## Fillet the given edges of this solid with the given radius.
-func fillet(radius: float, edge_list: Array) -> BdgSolid:
+## Fillet edges of this solid
+func fillet(radius: float, edge_list: Array = []) -> BdgSolid:
 	var builder := OcgBRepFilletAPIMakeFillet.from_v(_wrapped, OcgEnums.ChFi3d_FilletShape.ChFi3d_Rational)
 	for e in edge_list:
 		builder.add_9(radius, e._wrapped)
@@ -147,6 +147,81 @@ func chamfer(length: float, length2: float, edge_list: Array, reference_face: Bd
 static func make_revolve(section: BdgFace, angle: float, axis: BdgAxis) -> BdgSolid:
 	var revol := OcgBRepPrimAPIMakeRevol.from_V(section._wrapped, axis.wrapped(), angle * DEG2RAD, true)
 	return BdgSolid.new(revol.shape())
+
+## Hollow out this solid (creating a shell with open face openings).
+## faces_to_remove: Array of BdgFace openings. thickness: shell wall thickness (negative = inward).
+func hollow(faces_to_remove: Array, thickness: float, tolerance: float = 1e-4) -> BdgSolid:
+	var closing := OcgNCollectionListTopoDSShape.new()
+	for f in faces_to_remove:
+		if f is BdgShape and f._wrapped != null:
+			closing.append_4(f._wrapped)
+	var thick := OcgBRepOffsetAPIMakeThickSolid.new()
+	thick.make_thick_solid_by_join(
+		_wrapped, closing, thickness, tolerance,
+		OcgEnums.BRepOffset_Mode.BRepOffset_Skin,
+		true, true,
+		OcgEnums.GeomAbs_JoinType.GeomAbs_Arc,
+		false,
+		OcgMessageProgressRange.new()
+	)
+	thick.build(OcgMessageProgressRange.new())
+	if not thick.is_done():
+		push_error("BdgSolid.hollow failed")
+		return null
+	return BdgSolid.new(thick.shape())
+
+## Apply a draft taper angle (degrees) to selected faces of this solid.
+func draft(faces: Array, angle_deg: float, neutral_plane: BdgPlane, pull_dir: Vector3 = Vector3.ZERO) -> BdgSolid:
+	var draft_op := OcgBRepOffsetAPIDraftAngle.from_4(_wrapped)
+	var dir_vec := pull_dir if pull_dir != Vector3.ZERO else neutral_plane.z_dir
+	var dir := OcgGpDir.from_6(dir_vec.x, dir_vec.y, dir_vec.z)
+	var pln := neutral_plane.wrapped()
+	for f in faces:
+		if f is BdgFace and f._wrapped != null:
+			draft_op.add(OcgTopoDSShape.cast_face(f._wrapped), dir, deg_to_rad(angle_deg), pln, true)
+	draft_op.build(OcgMessageProgressRange.new())
+	if not draft_op.is_done():
+		push_error("BdgSolid.draft failed")
+		return null
+	return BdgSolid.new(draft_op.shape())
+
+## Offset / shell solid with optional face openings
+func offset_solid(amount: float, openings: Array = []) -> BdgShape:
+	if _wrapped == null or _wrapped.is_null():
+		return null
+
+	var list_faces := OcgNCollectionListTopoDSShape.new()
+	for f in openings:
+		if f is BdgFace and f._wrapped != null:
+			list_faces.append_4(f._wrapped)
+		elif f is BdgShape and f._wrapped != null:
+			list_faces.append_4(f._wrapped)
+
+	var ts := OcgBRepOffsetAPIMakeThickSolid.new()
+	ts.make_thick_solid_by_join(
+		_wrapped,
+		list_faces,
+		amount,
+		0.0001,
+		0,
+		true,
+		false,
+		0,
+		true,
+		OcgMessageProgressRange.new()
+	)
+	if ts.is_done():
+		return BdgShape.cast(ts.shape())
+
+	var ts_simple := OcgBRepOffsetAPIMakeThickSolid.new()
+	ts_simple.make_thick_solid_by_simple(_wrapped, amount)
+	if ts_simple.is_done():
+		return BdgShape.cast(ts_simple.shape())
+
+	return null
+
+func offset_shape(amount: float, openings: Array = []) -> BdgShape:
+	return offset_solid(amount, openings)
 
 ## Loft a solid through the given sections (wires) and optional apex vertices.
 ## objs: Array of BdgWire and/or BdgVertex (vertices only at start/end).
