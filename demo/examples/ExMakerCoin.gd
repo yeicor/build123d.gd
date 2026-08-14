@@ -12,25 +12,27 @@ func _init() -> void:
 	gdscript_code = """var diameter := 50.0
 var thickness := 10.0
 var r_flat := (diameter - thickness) * 0.5
-var r_arc := thickness * 0.5
 
-# 1. Half profile on XZ plane
+# 1. Half profile on XZ plane (faithful port of Polyline + JernArc + DoubleTangentArc)
+# JernArc: center (20, 5), radius 5, from (20, 0) to (18.076923, 9.615385)
+# DoubleTangentArc: center (0, 53), radius 47, from (18.076923, 9.615385) to (0, 6)
 var p0 := Vector3(0, 0, thickness * 0.6)
-var p1 := Vector3(0, 0, 0)
-var p2 := Vector3(r_flat, 0, 0)
+var p_bot_c := Vector3(0, 0, 0)
+var p_edge := Vector3(r_flat, 0, 0)
+var p_jern_end := Vector3(18.07692307692308, 0, 9.615384615384613)
 
-var e1: BdgEdge = Bdg.make_line(p0, p1)
-var e2: BdgEdge = Bdg.make_line(p1, p2)
-var arc_rim: BdgEdge = Bdg.make_radius_arc(p2, Vector3(r_flat + r_arc, 0, r_arc), r_arc, true)
-var arc_top: BdgEdge = Bdg.make_radius_arc(Vector3(r_flat + r_arc, 0, r_arc), p0, diameter * 0.8, true)
+var e1: BdgEdge = BdgEdge.make_line(p_bot_c, p_edge)
+var e2: BdgEdge = BdgEdge.make_three_point_arc(p_edge, Vector3(r_flat + 5.0, 0, 5.0), p_jern_end)
+var e3: BdgEdge = BdgEdge.make_tangent_arc(p_jern_end, Vector3(-0.923076923, 0, -0.384615385), p0)
+var e4: BdgEdge = BdgEdge.make_line(p0, p_bot_c)
 
-var coin_wire: BdgWire = Bdg.make_wire([e1, e2, arc_rim, arc_top])
+var coin_wire: BdgWire = Bdg.make_wire([e1, e2, e3, e4])
 var coin_face: BdgFace = Bdg.make_from_wires(coin_wire)
 
 # 2. Revolve 360 deg around Z axis
 var coin_solid: BdgShape = Bdg.revolve_axis(coin_face, 360.0, Bdg.axis_z())
 
-# 3. 8 Detent circular cuts around perimeter
+# 3. 8 Detent circular cuts around perimeter (radius 7 at radius 27.5)
 var detent_radius := thickness * 1.4 * 0.5
 var detent_pos_r := (diameter + 5.0) * 0.5
 for i in range(8):

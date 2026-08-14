@@ -6,30 +6,14 @@ func _init() -> void:
 		"holes",
 		"CAD Hole Types Showcase",
 		"Intermediate",
-		"Demonstrates standard mechanical fasteners and hole patterns: through-hole, recessed counterbore, recessed countersink, and flush countersink.",
+		"Demonstrates a simple through hole: a cylinder with a concentric bore cut through its full height.",
 		"https://raw.githubusercontent.com/gumyr/build123d/dev/examples/holes.py"
 	)
-	gdscript_code = """# 1. Base Cylinders
-var c1: BdgShape = Bdg.translate(Bdg.make_cylinder(3.0, 2.0), Vector3(0, 0, 0))
-var c2: BdgShape = Bdg.translate(Bdg.make_cylinder(3.0, 2.0), Vector3(10, 0, 0))
-var c3: BdgShape = Bdg.translate(Bdg.make_cylinder(3.0, 2.0), Vector3(0, 10, 0))
-var c4: BdgShape = Bdg.translate(Bdg.make_cylinder(3.0, 2.0), Vector3(10, 10, 0))
+	gdscript_code = """# Base cylinder (r=3, h=2)
+var cyl: BdgShape = Bdg.make_cylinder(3.0, 2.0)
 
-# 2. Simple through hole
-var h1: BdgShape = Bdg.translate(Bdg.hole(1.0, 4.0), Vector3(0, 0, -1))
-var part1: BdgShape = Bdg.cut(c1, h1)
+# Simple through hole: Hole(radius=1) cuts a r=1 cylinder through the full height
+var drill: BdgShape = Bdg.translate(Bdg.make_cylinder(1.0, 4.0), Vector3(0, 0, -1))
+var part: BdgShape = Bdg.cut(cyl, drill)
 
-# 3. Recessed CounterBore hole
-var cb: BdgShape = Bdg.translate(Bdg.counter_bore_hole(1.0, 4.0, 1.5, 0.5), Vector3(10, 0, 0))
-var part2: BdgShape = Bdg.cut(c2, cb)
-
-# 4. Recessed CounterSink hole
-var cs1: BdgShape = Bdg.translate(Bdg.counter_sink_hole(1.0, 1.5, 4.0, 82.0), Vector3(0, 10, 0))
-var part3: BdgShape = Bdg.cut(c3, cs1)
-
-# 5. Flush CounterSink hole at top face
-var cs2: BdgShape = Bdg.translate(Bdg.counter_sink_hole(1.0, 1.5, 4.0, 82.0), Vector3(10, 10, 2))
-var part4: BdgShape = Bdg.cut(c4, cs2)
-
-var compound: BdgShape = Bdg.make_compound([part1, part2, part3, part4])
-return Bdg.clean(compound)"""
+return Bdg.clean(part)"""

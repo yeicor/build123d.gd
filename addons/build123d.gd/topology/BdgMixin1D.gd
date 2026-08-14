@@ -156,7 +156,7 @@ func tessellate_edge(tolerance: float = 0.02) -> PackedVector3Array:
 	if c.is_empty():
 		var v_list := vertices()
 		for v in v_list:
-			pts.append(v.position if v.has_method("position") else v.center())
+			pts.append(v.position() if v.has_method("position") else v.center())
 		return pts
 
 	var curve: OcgGeomCurve = c[0]

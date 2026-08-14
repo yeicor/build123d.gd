@@ -82,28 +82,14 @@ static func make_center_arc(
 		plane2.y_dir = plane.y_dir
 		plane2.z_dir = plane.z_dir
 		return make_circle(radius, plane2)
-	var ccw := arc_size >= 0.0
 	var a1 := deg_to_rad(start_angle)
 	var a2 := deg_to_rad(start_angle + arc_size)
-	var plane2 := BdgPlane.new()
-	plane2.origin = center
-	plane2.x_dir = plane.x_dir
-	plane2.y_dir = plane.y_dir
-	plane2.z_dir = plane.z_dir
-	var circ := OcgGpCirc.from_L(_plane_to_ax2(plane2), radius)
-	var sense := true
-	var alpha1 := a1
-	var alpha2 := a2
-	if ccw:
-		if alpha2 <= alpha1:
-			alpha2 += 2.0 * PI
-	else:
-		alpha1 = a2
-		alpha2 = a1
-		sense = false
-	var geom := OcgGCMakeArcOfCircle.from_Zi(circ, alpha1, alpha2, sense)
-	var mk := OcgBRepBuilderAPIMakeEdge.from_5(geom.value())
-	return BdgEdge.new(mk.edge())
+	var amid := deg_to_rad(start_angle + arc_size * 0.5)
+	var xd := plane.x_dir
+	var yd := plane.y_dir
+	var pt := func(a: float) -> Vector3:
+		return center + xd * (radius * cos(a)) + yd * (radius * sin(a))
+	return make_three_point_arc(pt.call(a1), pt.call(amid), pt.call(a2))
 
 ## radius arc: arc through two points with given radius
 static func make_radius_arc(

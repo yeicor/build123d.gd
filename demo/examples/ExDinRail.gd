@@ -17,6 +17,8 @@ var rail_length := 1000.0
 var slot_width := 6.2
 var slot_length := 15.0
 var slot_pitch := 25.0
+var fillet_radius := 0.8
+var fillet_radius_outer := fillet_radius + thickness
 
 # 1. Outer hat profile coordinates on XZ plane
 var w_half := overall_width * 0.5
@@ -24,36 +26,49 @@ var top_half := top_width * 0.5
 var top_inner := top_half - thickness
 var h_inner := height - thickness
 
-var pts: Array[Vector3] = [
-	Vector3(-w_half, 0, 0),
-	Vector3(w_half, 0, 0),
-	Vector3(w_half, 0, thickness),
-	Vector3(top_half, 0, thickness),
-	Vector3(top_half, 0, height),
-	Vector3(-top_half, 0, height),
-	Vector3(-top_half, 0, thickness),
-	Vector3(-w_half, 0, thickness)
-]
+# Fillet tangent points
+var step_xt := top_half + fillet_radius          # 14.3 base-top edge tangent
+var step_zt := thickness + fillet_radius         # 1.8 step wall tangent
+var top_zt := height - fillet_radius_outer       # 5.7 top wall tangent
+var top_xt := top_half - fillet_radius_outer     # 11.7 top edge tangent
+var bottom_zt := fillet_radius_outer             # 1.8 hole wall tangent
+var bottom_xt := top_inner + fillet_radius_outer # 14.3 hole bottom tangent
+var top_zt2 := h_inner - fillet_radius           # 5.7 hole top wall tangent
+var top_xt2 := top_inner - fillet_radius         # 11.7 hole top edge tangent
 
-var outer_wire: BdgWire = Bdg.make_polygon(pts, true)
-var outer_face: BdgFace = Bdg.make_from_wires(outer_wire)
-var outer_solid: BdgShape = Bdg.extrude_vec(outer_face, Vector3(0, rail_length, 0))
+# 2. Outer hat wire (fillets baked into the edges)
+var oe: Array = []
+oe.append(Bdg.make_line(Vector3(-w_half, 0, 0), Vector3(w_half, 0, 0)))
+oe.append(Bdg.make_line(Vector3(w_half, 0, 0), Vector3(w_half, 0, thickness)))
+oe.append(Bdg.make_line(Vector3(w_half, 0, thickness), Vector3(step_xt, 0, thickness)))
+oe.append(Bdg.make_radius_arc(Vector3(step_xt, 0, thickness), Vector3(top_half, 0, step_zt), -fillet_radius))
+oe.append(Bdg.make_line(Vector3(top_half, 0, step_zt), Vector3(top_half, 0, top_zt)))
+oe.append(Bdg.make_radius_arc(Vector3(top_half, 0, top_zt), Vector3(top_xt, 0, height), fillet_radius_outer))
+oe.append(Bdg.make_line(Vector3(top_xt, 0, height), Vector3(-top_xt, 0, height)))
+oe.append(Bdg.make_radius_arc(Vector3(-top_xt, 0, height), Vector3(-top_half, 0, top_zt), fillet_radius_outer))
+oe.append(Bdg.make_line(Vector3(-top_half, 0, top_zt), Vector3(-top_half, 0, step_zt)))
+oe.append(Bdg.make_radius_arc(Vector3(-top_half, 0, step_zt), Vector3(-step_xt, 0, thickness), -fillet_radius))
+oe.append(Bdg.make_line(Vector3(-step_xt, 0, thickness), Vector3(-w_half, 0, thickness)))
+oe.append(Bdg.make_line(Vector3(-w_half, 0, thickness), Vector3(-w_half, 0, 0)))
+var outer_wire: BdgWire = Bdg.make_wire(oe)
 
-# Inner hollow cutout
-var inner_pts: Array[Vector3] = [
-	Vector3(-top_inner, 0, 0),
-	Vector3(top_inner, 0, 0),
-	Vector3(top_inner, 0, h_inner),
-	Vector3(-top_inner, 0, h_inner)
-]
-var inner_wire: BdgWire = Bdg.make_polygon(inner_pts, true)
-var inner_face: BdgFace = Bdg.make_from_wires(inner_wire)
-var inner_solid: BdgShape = Bdg.translate(Bdg.extrude_vec(inner_face, Vector3(0, rail_length + 2.0, 0)), Vector3(0, -1.0, 0))
+# 3. Inner hollow wire (fillets baked into the edges)
+var he: Array = []
+he.append(Bdg.make_radius_arc(Vector3(top_inner, 0, bottom_zt), Vector3(bottom_xt, 0, 0), fillet_radius_outer))
+he.append(Bdg.make_line(Vector3(bottom_xt, 0, 0), Vector3(-bottom_xt, 0, 0)))
+he.append(Bdg.make_radius_arc(Vector3(-bottom_xt, 0, 0), Vector3(-top_inner, 0, bottom_zt), fillet_radius_outer))
+he.append(Bdg.make_line(Vector3(-top_inner, 0, bottom_zt), Vector3(-top_inner, 0, top_zt2)))
+he.append(Bdg.make_radius_arc(Vector3(-top_inner, 0, top_zt2), Vector3(-top_xt2, 0, h_inner), -fillet_radius))
+he.append(Bdg.make_line(Vector3(-top_xt2, 0, h_inner), Vector3(top_xt2, 0, h_inner)))
+he.append(Bdg.make_radius_arc(Vector3(top_inner, 0, top_zt2), Vector3(top_xt2, 0, h_inner), fillet_radius))
+he.append(Bdg.make_line(Vector3(top_inner, 0, top_zt2), Vector3(top_inner, 0, bottom_zt)))
+var inner_wire: BdgWire = Bdg.make_wire(he)
 
-# 2. Extrude symmetrically along Y axis
-var rail_solid: BdgShape = Bdg.translate(Bdg.cut(outer_solid, inner_solid), Vector3(0, -rail_length * 0.5, 0))
+# 4. Build the profile face (with hollow) and extrude along Y
+var profile_face: BdgFace = Bdg.make_from_wires(outer_wire, [inner_wire])
+var rail_solid: BdgShape = Bdg.translate(Bdg.extrude_vec(profile_face, Vector3(0, rail_length, 0)), Vector3(0, -rail_length * 0.5, 0))
 
-# 3. Pattern slotted mounting holes
+# 5. Pattern slotted mounting holes
 var slot_count: int = int(rail_length / slot_pitch) - 1
 var y_start: float = -float(slot_count - 1) * slot_pitch * 0.5
 

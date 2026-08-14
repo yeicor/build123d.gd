@@ -21,7 +21,15 @@ static func add(objects: Variant, mode: int = BdgEnums.Mode.ADD) -> Variant:
 
 	var cur := BdgBuilder.get_current()
 	if cur != null:
-		cur._add_to_context(shape_to_add, mode)
+		var target := shape_to_add
+		if BdgLocations.has_active_locations():
+			var locs := BdgLocations.get_current_locations()
+			if not locs.is_empty():
+				var replicated: Array = []
+				for loc in locs:
+					replicated.append(shape_to_add.moved(loc))
+				target = BdgShape.make_compound_of(replicated)
+		cur._add_to_context(target, mode)
 	return shape_to_add
 
 ## Mirror a shape across a given plane (defaults to XY).
