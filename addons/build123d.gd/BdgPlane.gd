@@ -167,5 +167,78 @@ func to_ax2() -> OcgGpAx2:
 func offset(dist: float) -> BdgPlane:
 	return BdgPlane.new(origin + z_dir * dist, x_dir, z_dir)
 
+## Return location corresponding to this plane (origin + orientation)
+func location() -> BdgLocation:
+	var b := Basis(x_dir, y_dir, z_dir)
+	return BdgLocation.new(origin, b.get_rotation_quaternion())
+
+## Return new plane with origin shifted to new_origin
+func shift_origin(new_origin: Vector3) -> BdgPlane:
+	return BdgPlane.new(new_origin, x_dir, z_dir)
+
+## Transform world 3D point/vector into local plane 2D/3D coordinates
+func to_local_coords(world_p: Vector3) -> Vector3:
+	var d := world_p - origin
+	return Vector3(d.dot(x_dir), d.dot(y_dir), d.dot(z_dir))
+
+## Transform local plane 2D/3D coordinates into world 3D coordinates
+func from_local_coords(local_p: Vector3) -> Vector3:
+	return origin + x_dir * local_p.x + y_dir * local_p.y + z_dir * local_p.z
+
+## Forward 4x4 matrix mapping local plane space to world space
+func forward_transform() -> BdgMatrix:
+	var loc := location()
+	return BdgMatrix.translation(loc.position).multiplied(BdgMatrix.new())
+
+## Reverse 4x4 matrix mapping world space to local plane space
+func reverse_transform() -> BdgMatrix:
+	return forward_transform().inverted()
+
+## Create a new plane rotated by angle_deg around an axis vector or local axis
+func rotated(angle_deg: float, axis_vector: Vector3 = Vector3.ZERO) -> BdgPlane:
+	var rot_axis := axis_vector if axis_vector != Vector3.ZERO else z_dir
+	var new_x := x_dir.rotated(rot_axis.normalized(), deg_to_rad(angle_deg))
+	var new_z := z_dir.rotated(rot_axis.normalized(), deg_to_rad(angle_deg))
+	return BdgPlane.new(origin, new_x, new_z)
+
+## Move plane origin in-place by offset_vec
+func move(offset_vec: Vector3) -> BdgPlane:
+	origin += offset_vec
+	_sync()
+	return self
+
+## Move plane origin returning a new BdgPlane
+func moved(offset_vec: Vector3) -> BdgPlane:
+	return BdgPlane.new(origin + offset_vec, x_dir, z_dir)
+
+## Check if point lies within plane tolerance
+func contains(p: Vector3, tolerance: float = 1e-5) -> bool:
+	return distance(p) < tolerance
+
+## Compute line of intersection with another plane, or point of intersection with line/axis
+func intersect(other: Variant) -> Variant:
+	if other is BdgPlane:
+		var other_pln: BdgPlane = other as BdgPlane
+		var n1 := z_dir
+		var n2 := other_pln.z_dir
+		var line_dir := n1.cross(n2)
+		if line_dir.length_squared() < 1e-8:
+			return null # parallel planes
+		var line_dir_n := line_dir.normalized()
+		var d1 := signed_distance(Vector3.ZERO)
+		var d2 := other_pln.signed_distance(Vector3.ZERO)
+		var pnt := ((n1 * d2) - (n2 * d1)).cross(line_dir_n) / line_dir.length_squared()
+		return BdgAxis.new(pnt, line_dir_n)
+	elif other is BdgAxis:
+		var other_axis: BdgAxis = other as BdgAxis
+		var denom := z_dir.dot(other_axis.direction)
+		if absf(denom) < 1e-8:
+			return null
+		var dist_t := (origin - other_axis.position).dot(z_dir) / denom
+		return other_axis.position + other_axis.direction * dist_t
+	return null
+
+
 func _to_string() -> String:
 	return "Plane(origin=%s, x_dir=%s, z_dir=%s)" % [origin, x_dir, z_dir]
+

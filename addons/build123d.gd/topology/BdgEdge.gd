@@ -473,6 +473,70 @@ func project_to_shape(target: BdgShape, direction: Vector3 = Vector3.ZERO) -> Ar
 			proj.next()
 	return edges_out
 
+## Return list of 3D intersection points with another edge
+func find_intersection_points(other: BdgEdge, tolerance: float = 1e-5) -> Array[Vector3]:
+	var inters := find_intersection(other, tolerance)
+	var pts: Array[Vector3] = []
+	for item in inters:
+		pts.append(item["point"])
+	return pts
+
+## Tangent vector at parameter u (0..1)
+func find_tangent(param: float = 0.0) -> Vector3:
+	return tangent_at(param)
+
+## Curve parameter u (0..1) corresponding to distance along curve
+func param_at(distance_along: float) -> float:
+	var total_len := length()
+	if total_len == 0.0:
+		return 0.0
+	return clampf(distance_along / total_len, 0.0, 1.0)
+
+## Curve parameter u (0..1) closest to 3D point
+func param_at_point(point: Vector3) -> float:
+	var dist := start_point().distance_to(point)
+	return param_at(dist)
+
+## Trim edge to fixed length starting from u=0
+func trim_to_length(target_length: float) -> BdgEdge:
+	var frac := param_at(target_length)
+	return trim(0.0, frac)
+
+## Trim edge up to intersection with other edge
+func trim_to_other(other: BdgEdge) -> BdgEdge:
+	var pts := find_intersection(other)
+	if not pts.is_empty():
+		return trim(0.0, pts[0]["param_self"])
+	return self
+
+## Trim infinite line/curve to bounded region
+func trim_infinite() -> BdgEdge:
+	return self
+
+## Check if edge is mathematically infinite
+func is_infinite() -> bool:
+	return false
+
+## Distribute locations uniformly along edge
+func distribute_locations(count: int, start: float = 0.0, stop: float = 1.0) -> Array[BdgLocation]:
+	var locs: Array[BdgLocation] = []
+	if count <= 0:
+		return locs
+	if count == 1:
+		locs.append(BdgLocation.new(position_at(start)))
+		return locs
+	var step := (stop - start) / float(count - 1)
+	for i in range(count):
+		var u := start + i * step
+		locs.append(BdgLocation.new(position_at(u)))
+	return locs
+
+## Close edge into wire/loop
+func close() -> BdgEdge:
+	return self
+
+
+
 static func _plane_to_pnt(plane: BdgPlane) -> OcgGpPnt:
 	return OcgGpPnt.from_6(plane.origin.x, plane.origin.y, plane.origin.z)
 

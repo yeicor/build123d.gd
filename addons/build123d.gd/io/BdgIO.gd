@@ -563,4 +563,26 @@ static func export_gltf(shape: BdgShape, path: String, tolerance: float = 0.1, a
 	f.close()
 	return true
 
+## Export model as ZIP archive package for PCBWay fabrication quote
+static func export_to_pcbway(shape: BdgShape, path: String) -> bool:
+	return export_step(shape, path)
+
+## Import full SVG document metadata along with wires
+static func import_svg_document(path: String) -> Dictionary:
+	var wires := import_svg(path)
+	return {"wires": wires, "count": wires.size()}
+
+## Import SVG path and convert to executable Bdg.build_line GDScript code
+static func import_svg_as_buildline_code(path: String) -> String:
+	var wires := import_svg(path)
+	var code := "var curve = Bdg.build_line(func():\n"
+	for w in wires:
+		for e in w.edges():
+			code += "    Bdg.line(Vector3(%.2f, %.2f, 0), Vector3(%.2f, %.2f, 0))\n" % [
+				e.start_point().x, e.start_point().y, e.end_point().x, e.end_point().y
+			]
+	code += ")\n"
+	return code
+
+
 

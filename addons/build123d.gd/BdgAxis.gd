@@ -80,5 +80,53 @@ func wrapped() -> OcgGpAx1:
 func flipped() -> BdgAxis:
 	return BdgAxis.new(position, -direction)
 
+## Alias for flipped (Python parity)
+func reverse() -> BdgAxis:
+	return flipped()
+
+## Return location corresponding to this axis (position and direction as Z)
+func location() -> BdgLocation:
+	var q := Quaternion(Vector3.BACK, direction).normalized()
+	return BdgLocation.new(position, q)
+
+## Convert axis to plane perpendicular to direction or containing axis
+func to_plane() -> BdgPlane:
+	return BdgPlane.new(position, Vector3.RIGHT if abs(direction.dot(Vector3.RIGHT)) < 0.9 else Vector3.UP, direction)
+
+## Angle in degrees between this axis direction and another axis direction
+func angle_between(other: BdgAxis) -> float:
+	return rad_to_deg(direction.angle_to(other.direction))
+
+## Returns true if axes are coaxial (collinear) within tolerance
+func is_coaxial(other: BdgAxis, tol_angle_deg: float = 1e-3, tol_dist: float = 1e-4) -> bool:
+	if not is_parallel(other, tol_angle_deg):
+		return false
+	var dist := BdgVector.project_to_plane(other.position, position, direction).distance_to(position)
+	return dist < tol_dist
+
+## Returns true if axis directions are normal (perpendicular) within tolerance
+func is_normal(other: BdgAxis, tol_deg: float = 1e-3) -> bool:
+	var angle := angle_between(other)
+	return abs(angle - 90.0) < tol_deg
+
+## Returns true if axis directions are opposite (anti-parallel) within tolerance
+func is_opposite(other: BdgAxis, tol_deg: float = 1e-3) -> bool:
+	var angle := angle_between(other)
+	return abs(angle - 180.0) < tol_deg
+
+## Returns true if axis directions are parallel within tolerance
+func is_parallel(other: BdgAxis, tol_deg: float = 1e-3) -> bool:
+	var angle := angle_between(other)
+	return angle < tol_deg or abs(angle - 180.0) < tol_deg
+
+## Returns true if axes are skew (non-parallel and non-intersecting)
+func is_skew(other: BdgAxis, tol_deg: float = 1e-3, tol_dist: float = 1e-4) -> bool:
+	if is_parallel(other, tol_deg):
+		return false
+	var n := direction.cross(other.direction).normalized()
+	var d := abs((other.position - position).dot(n))
+	return d > tol_dist
+
 func _to_string() -> String:
 	return "Axis(position=%s, direction=%s)" % [position, direction]
+

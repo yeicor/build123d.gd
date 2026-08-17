@@ -52,11 +52,23 @@ func _init(...args) -> void:
 
 		if not hit_found:
 			# Try distance extrema
-			var ext: Dictionary = other.distance_to_with_closest_points(BdgShapeList.new([ray_edge])) if other.has_method("distance_to_with_closest_points") else {}
-			var pts: Array = ext.get("closest_points", [])
+			var pts: Array = []
+			if other is BdgShape:
+				var res: Array = (other as BdgShape).distance_to_with_closest_points(ray_edge)
+				if res.size() >= 3:
+					pts = [res[1], res[2]]
+			elif other != null and other.has_method("distance_to_with_closest_points"):
+				var res_val: Variant = other.call("distance_to_with_closest_points", ray_edge)
+				if res_val is Array and (res_val as Array).size() >= 3:
+					pts = [(res_val as Array)[1], (res_val as Array)[2]]
+				elif res_val is Dictionary:
+					pts = (res_val as Dictionary).get("closest_points", [])
+
+
 			if not pts.is_empty():
 				hit_point = pts[0]
 				hit_found = true
+
 
 	if not hit_found:
 		hit_point = start_point + direction * 10.0

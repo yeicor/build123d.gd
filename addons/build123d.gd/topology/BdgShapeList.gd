@@ -333,6 +333,17 @@ func _sort_key(sort_by: int) -> Callable:
 	return func(obj: BdgShape) -> float:
 		return obj.center().z
 
+## Sort shapes by distance to a target point/shape
+func sort_by_distance(target: Variant, reverse: bool = false) -> BdgShapeList:
+	var target_pt := Vector3.ZERO
+	if target is Vector3:
+		target_pt = target
+	elif target is BdgShape:
+		target_pt = target.center()
+	return sort_by(func(obj: BdgShape) -> float:
+		return obj.center().distance_to(target_pt), reverse)
+
+
 # ---------------------------------------------------------------------------
 # Distances
 # ---------------------------------------------------------------------------

@@ -54,7 +54,60 @@ static func multiply(a: Vector3, s: float) -> Vector3:
 static func copy(v: Vector3) -> Vector3:
 	return Vector3(v.x, v.y, v.z)
 
+## Add two vectors
+static func add(a: Vector3, b: Vector3) -> Vector3:
+	return a + b
+
+## Subtract two vectors
+static func sub(a: Vector3, b: Vector3) -> Vector3:
+	return a - b
+
+## Return unit direction vector
+static func to_dir(v: Vector3) -> Vector3:
+	return v.normalized()
+
+## Return point vector (alias for self)
+static func to_pnt(v: Vector3) -> Vector3:
+	return v
+
+## Convert vector to array tuple [x, y, z]
+static func to_tuple(v: Vector3) -> Array:
+	return [v.x, v.y, v.z]
+
+## Transform vector by a matrix or location
+static func transform(v: Vector3, matrix_or_loc: Variant) -> Vector3:
+	if matrix_or_loc is BdgMatrix:
+		return (matrix_or_loc as BdgMatrix).apply(v)
+	elif matrix_or_loc is BdgLocation:
+		var t: Transform3D = (matrix_or_loc as BdgLocation).to_transform3d()
+		return t * v
+	elif matrix_or_loc is Transform3D:
+		return (matrix_or_loc as Transform3D) * v
+	return v
+
+
+## Reverse vector direction
+static func reverse(v: Vector3) -> Vector3:
+	return -v
+
+## Seamless conversion helper to Godot Vector3
+static func to_vector3(val: Variant) -> Vector3:
+	if val is Vector3:
+		return val
+	elif val is Array and val.size() >= 3:
+		return Vector3(val[0], val[1], val[2])
+	elif val is Array and val.size() == 2:
+		return Vector3(val[0], val[1], 0.0)
+	elif val is Vector2:
+		return Vector3(val.x, val.y, 0.0)
+	elif val != null and val.has_method("to_vector3"):
+		return val.to_vector3()
+	elif val != null and "position" in val and val.position is Vector3:
+		return val.position
+	return Vector3.ZERO
+
 ## wrap zeros below tolerance (build123d format-style trimming)
 static func trim_float(x: float, precision: int, tol: float = TOL) -> float:
 	var r := roundf(x * pow(10.0, precision)) / pow(10.0, precision)
 	return 0.0 if abs(x) < tol else r
+

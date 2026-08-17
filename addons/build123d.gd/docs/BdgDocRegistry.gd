@@ -1,6 +1,6 @@
 extends RefCounted
 ## BdgDocRegistry - Comprehensive API Documentation & Autocompletion Metadata Database.
-## Contains 100% of all build123d.gd methods, classes, constructors, selectors, and constants.
+## Programmatically generated from source files by build_docs.gd tool.
 class_name BdgDocRegistry
 
 static var _docs_cache: Array[Dictionary] = []
@@ -47,1754 +47,642 @@ static func search_docs(query: String, category: String = "All") -> Array[Dictio
 			results.append(item)
 	return results
 
+static func get_categories() -> Array[String]:
+	return ["All", "Builders", "Math & Geometry", "Topology", "Operations", "Objects", "I/O & Meshing", "Patterns"]
+
 static func _initialize_database() -> void:
 	_docs_cache = [
-		# =====================================================================
-		# 1. Builders & Contexts
-		# =====================================================================
-		{
-			"category": "Builders",
-			"name": "Bdg.build_part",
-			"sig": "Bdg.build_part(block: Callable) -> BdgPart",
-			"returns": "BdgPart",
-			"insert": "Bdg.build_part(func():\n\t${0}\n)",
-			"desc": "Builds a 3D Part by executing a callback closure. 3D primitives and boolean operations inside the closure automatically combine into a final solid model.",
-			"params": [
-				{"name": "block", "type": "Callable", "desc": "Closure callback that creates 3D shapes (e.g. box, cylinder, extrude)."}
-			],
-			"example": "var part = Bdg.build_part(func():\n    Bdg.box(50.0, 30.0, 10.0)\n    Bdg.hole(4.0, 12.0)\n)"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.build_sketch",
-			"sig": "Bdg.build_sketch(block: Callable) -> BdgSketch",
-			"returns": "BdgSketch",
-			"insert": "Bdg.build_sketch(func():\n\t${0}\n)",
-			"desc": "Builds a 2D planar Sketch by executing a callback closure. Combines 2D sketch primitives into unified planar faces for extrusion or revolving.",
-			"params": [
-				{"name": "block", "type": "Callable", "desc": "Closure callback defining 2D sketch shapes (e.g. rect, circle, polygon)."}
-			],
-			"example": "var sk = Bdg.build_sketch(func():\n    Bdg.rect(40.0, 20.0)\n    Bdg.circle(5.0, 360.0, Bdg.Align.CENTER, Bdg.Mode.SUBTRACT)\n)"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.build_line",
-			"sig": "Bdg.build_line(block: Callable) -> BdgShape",
-			"returns": "BdgShape / BdgWire",
-			"insert": "Bdg.build_line(func():\n\t${0}\n)",
-			"desc": "Builds a 1D Curve / Wire by executing a callback closure. Automatically connects lines, arcs, and splines into continuous boundary chains.",
-			"params": [
-				{"name": "block", "type": "Callable", "desc": "Closure callback creating 1D line segments and arcs."}
-			],
-			"example": "var curve = Bdg.build_line(func():\n    Bdg.line(Vector3.ZERO, Vector3(20, 0, 0))\n    Bdg.center_arc(Vector3(20, 10, 0), 10.0, -90.0, 90.0)\n)"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.last_shape",
-			"sig": "Bdg.last_shape() -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.last_shape()",
-			"desc": "Returns the active shape / object from the current builder context (Part, Sketch, or Line). Ideal for referencing the base object for fillets or extrusions.",
-			"params": [],
-			"example": "Bdg.rounded_rect(60.0, 30.0, 4.0)\nBdg.extrude(Bdg.last_shape(), 10.0)"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.last_solid",
-			"sig": "Bdg.last_solid() -> BdgSolid",
-			"returns": "BdgSolid",
-			"insert": "Bdg.last_solid()",
-			"desc": "Returns the most recent 3D solid created in the active builder context.",
-			"params": [],
-			"example": "var s = Bdg.last_solid()\nvar vol = s.volume()"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.last_face",
-			"sig": "Bdg.last_face() -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.last_face()",
-			"desc": "Returns the most recent 2D face created in the active builder context.",
-			"params": [],
-			"example": "var f = Bdg.last_face()\nvar area = f.area()"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.last_edge",
-			"sig": "Bdg.last_edge() -> BdgEdge",
-			"returns": "BdgEdge",
-			"insert": "Bdg.last_edge()",
-			"desc": "Returns the most recent 1D curve or edge created in the active builder context.",
-			"params": [],
-			"example": "var e = Bdg.last_edge()\nvar len = e.length()"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.last_wire",
-			"sig": "Bdg.last_wire() -> BdgWire",
-			"returns": "BdgWire",
-			"insert": "Bdg.last_wire()",
-			"desc": "Returns the most recent wire loop created in the active builder context.",
-			"params": [],
-			"example": "var w = Bdg.last_wire()\nvar is_closed = w.is_closed()"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.eval",
-			"sig": "Bdg.eval(code: String) -> Variant",
-			"returns": "Variant / BdgShape",
-			"insert": "Bdg.eval(\"${0}\")",
-			"desc": "Dynamically compiles and executes a GDScript CAD code string on the fly, returning the constructed model or assembly compound.",
-			"params": [
-				{"name": "code", "type": "String", "desc": "GDScript source code returning a BdgShape or BdgAssembly."}
-			],
-			"example": "var model = Bdg.eval(\"\"\"\nvar b = Bdg.box(20, 20, 20)\nreturn b\n\"\"\")"
-		},
-		{
-			"category": "Builders",
-			"name": "Bdg.add",
-			"sig": "Bdg.add(shape: Variant, mode: int = Bdg.Mode.ADD) -> void",
-			"returns": "void",
-			"insert": "Bdg.add(${0:shape})",
-			"desc": "Explicitly adds, subtracts, or intersects a shape with the current builder context model.",
-			"params": [
-				{"name": "shape", "type": "Variant", "desc": "BdgShape, BdgSolid, or BdgCompound to add."},
-				{"name": "mode", "type": "int", "desc": "Combination mode: Mode.ADD, Mode.SUBTRACT, Mode.INTERSECT, or Mode.REPLACE."}
-			],
-			"example": "var pin = Bdg.cylinder(3.0, 10.0)\nBdg.add(pin, Bdg.Mode.ADD)"
-		},
-
-		# =====================================================================
-		# 2. Location Contexts & Patterns
-		# =====================================================================
-		{
-			"category": "Patterns",
-			"name": "Bdg.locations",
-			"sig": "Bdg.locations(loc_generator: Variant, block: Callable) -> void",
-			"returns": "void",
-			"insert": "Bdg.locations([${0:Vector3.ZERO}], func():\n\t\n)",
-			"desc": "Executes a block with an active Location context. Objects created inside are automatically cloned to each target position/plane.",
-			"params": [
-				{"name": "loc_generator", "type": "Variant", "desc": "Array of Vector3, BdgLocation, or BdgPlane."},
-				{"name": "block", "type": "Callable", "desc": "Closure callback to execute at each location."}
-			],
-			"example": "Bdg.locations([Vector3(-20, 0, 0), Vector3(20, 0, 0)], func():\n    Bdg.hole(3.0, 10.0)\n)"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.grid_locations",
-			"sig": "Bdg.grid_locations(x_spacing: float, y_spacing: float, x_count: int, y_count: int, block: Callable) -> void",
-			"returns": "void",
-			"insert": "Bdg.grid_locations(${1:10.0}, ${2:10.0}, ${3:3}, ${4:3}, func():\n\t${0}\n)",
-			"desc": "Generates a 2D rectangular grid pattern of locations centered at the origin.",
-			"params": [
-				{"name": "x_spacing", "type": "float", "desc": "Distance between columns along X."},
-				{"name": "y_spacing", "type": "float", "desc": "Distance between rows along Y."},
-				{"name": "x_count", "type": "int", "desc": "Number of columns."},
-				{"name": "y_count", "type": "int", "desc": "Number of rows."},
-				{"name": "block", "type": "Callable", "desc": "Closure callback."}
-			],
-			"example": "Bdg.grid_locations(20.0, 20.0, 4, 3, func():\n    Bdg.cylinder(2.0, 10.0)\n)"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.hex_locations",
-			"sig": "Bdg.hex_locations(apothem: float, x_count: int, y_count: int, block: Callable) -> void",
-			"returns": "void",
-			"insert": "Bdg.hex_locations(${1:5.0}, ${2:4}, ${3:4}, func():\n\t${0}\n)",
-			"desc": "Generates a 2D hexagonal honeycomb lattice of locations.",
-			"params": [
-				{"name": "apothem", "type": "float", "desc": "Perpendicular distance from hexagon center to midpoint of sides."},
-				{"name": "x_count", "type": "int", "desc": "Number of hex columns."},
-				{"name": "y_count", "type": "int", "desc": "Number of hex rows."},
-				{"name": "block", "type": "Callable", "desc": "Closure callback."}
-			],
-			"example": "Bdg.hex_locations(6.0, 5, 4, func():\n    Bdg.regular_polygon(5.0, 6)\n)"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.polar_locations",
-			"sig": "Bdg.polar_locations(radius: float, count: int, start_angle: float = 0.0, angular_range: float = 360.0, rotate: bool = true, block: Callable = Callable()) -> void",
-			"returns": "void",
-			"insert": "Bdg.polar_locations(${1:25.0}, ${2:6}, 0.0, 360.0, true, func():\n\t${0}\n)",
-			"desc": "Generates a circular polar array of locations around the Z axis.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Pitch radius of bolt circle."},
-				{"name": "count", "type": "int", "desc": "Total number of instances."},
-				{"name": "start_angle", "type": "float", "desc": "Starting angular offset in degrees (default 0.0)."},
-				{"name": "angular_range", "type": "float", "desc": "Total sweep angle in degrees (default 360.0)."},
-				{"name": "rotate", "type": "bool", "desc": "Whether to rotate each instance tangent to the circle."}
-			],
-			"example": "Bdg.polar_locations(30.0, 8, 0.0, 360.0, true, func():\n    Bdg.hole(3.5, 15.0)\n)"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.location",
-			"sig": "Bdg.location(position: Vector3 = Vector3.ZERO, orientation: Quaternion = Quaternion.IDENTITY) -> BdgLocation",
-			"returns": "BdgLocation",
-			"insert": "Bdg.location(${1:Vector3.ZERO})",
-			"desc": "Constructs a 3D rigid transform with 3D translation vector and orientation quaternion.",
-			"params": [
-				{"name": "position", "type": "Vector3", "desc": "World origin position."},
-				{"name": "orientation", "type": "Quaternion", "desc": "Rotational orientation."}
-			],
-			"example": "var loc = Bdg.location(Vector3(0, 10, 20), Bdg.rot(0, 45, 0))"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.polar",
-			"sig": "Bdg.polar(distance: float, angle_deg: float) -> Vector3",
-			"returns": "Vector3",
-			"insert": "Bdg.polar(${1:distance}, ${2:angle_deg})",
-			"desc": "Computes a 2D/3D offset vector from distance and angle in degrees.",
-			"params": [
-				{"name": "distance", "type": "float", "desc": "Radial distance from origin."},
-				{"name": "angle_deg", "type": "float", "desc": "Angle in degrees."}
-			],
-			"example": "var pt = Bdg.polar(50.0, 45.0)"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.delta",
-			"sig": "Bdg.delta(dx: float, dy: float, dz: float = 0.0) -> Vector3",
-			"returns": "Vector3",
-			"insert": "Bdg.delta(${1:dx}, ${2:dy}, ${3:dz})",
-			"desc": "Shorthand for relative delta translation vector Vector3(dx, dy, dz).",
-			"params": [
-				{"name": "dx", "type": "float", "desc": "Delta along X."},
-				{"name": "dy", "type": "float", "desc": "Delta along Y."},
-				{"name": "dz", "type": "float", "desc": "Delta along Z."}
-			],
-			"example": "var v = Bdg.delta(10.0, 5.0, -2.0)"
-		},
-
-		# =====================================================================
-		# 3. 3D Solids
-		# =====================================================================
-		{
-			"category": "3D Solids",
-			"name": "Bdg.box",
-			"sig": "Bdg.box(length: float, width: float, height: float, center: Vector3 = Vector3.ZERO, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgBox",
-			"returns": "BdgBox",
-			"insert": "Bdg.box(${1:length}, ${2:width}, ${3:height})",
-			"desc": "Constructs a solid 3D rectangular box/cuboid with precise length, width, and height.",
-			"params": [
-				{"name": "length", "type": "float", "desc": "Dimension along X axis."},
-				{"name": "width", "type": "float", "desc": "Dimension along Y axis."},
-				{"name": "height", "type": "float", "desc": "Dimension along Z axis."},
-				{"name": "align", "type": "Variant", "desc": "Alignment: Align.CENTER, Align.MIN, or Align.MAX."}
-			],
-			"example": "var b = Bdg.box(80.0, 40.0, 20.0)"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.cylinder",
-			"sig": "Bdg.cylinder(radius: float, height: float, angle: float = 360.0, center: Vector3 = Vector3.ZERO, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgCylinder",
-			"returns": "BdgCylinder",
-			"insert": "Bdg.cylinder(${1:radius}, ${2:height})",
-			"desc": "Constructs a solid 3D cylinder or circular sector along the Z axis.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Cylinder radius."},
-				{"name": "height", "type": "float", "desc": "Cylinder height along Z."},
-				{"name": "angle", "type": "float", "desc": "Sweep angle in degrees (default 360.0)."}
-			],
-			"example": "var cyl = Bdg.cylinder(15.0, 50.0)"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.sphere",
-			"sig": "Bdg.sphere(radius: float, arc_size1: float = -90.0, arc_size2: float = 90.0, center: Vector3 = Vector3.ZERO, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgSphere",
-			"returns": "BdgSphere",
-			"insert": "Bdg.sphere(${1:radius})",
-			"desc": "Constructs a solid 3D sphere with specified radius.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Sphere radius."}
-			],
-			"example": "var ball = Bdg.sphere(12.0)"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.cone",
-			"sig": "Bdg.cone(bottom_radius: float, top_radius: float, height: float, center: Vector3 = Vector3.ZERO, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgCone",
-			"returns": "BdgCone",
-			"insert": "Bdg.cone(${1:bottom_radius}, ${2:top_radius}, ${3:height})",
-			"desc": "Constructs a solid 3D right circular cone or conical frustum.",
-			"params": [
-				{"name": "bottom_radius", "type": "float", "desc": "Radius at the base (Z=0)."},
-				{"name": "top_radius", "type": "float", "desc": "Radius at the apex/top."},
-				{"name": "height", "type": "float", "desc": "Total height along Z."}
-			],
-			"example": "var cone = Bdg.cone(20.0, 8.0, 35.0)"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.torus",
-			"sig": "Bdg.torus(major_radius: float, minor_radius: float, angle: float = 360.0, center: Vector3 = Vector3.ZERO, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgTorus",
-			"returns": "BdgTorus",
-			"insert": "Bdg.torus(${1:major_radius}, ${2:minor_radius})",
-			"desc": "Constructs a solid 3D doughnut/torus revolving a circular section around the Z axis.",
-			"params": [
-				{"name": "major_radius", "type": "float", "desc": "Distance from center to tube center."},
-				{"name": "minor_radius", "type": "float", "desc": "Radius of circular cross section."}
-			],
-			"example": "var ring = Bdg.torus(30.0, 5.0)"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.wedge",
-			"sig": "Bdg.wedge(dx: float, dy: float, dz: float, xmin: float, zmin: float, xmax: float, zmax: float, center: Vector3 = Vector3.ZERO, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgWedge",
-			"returns": "BdgWedge",
-			"insert": "Bdg.wedge(${1:dx}, ${2:dy}, ${3:dz}, ${4:xmin}, ${5:zmin}, ${6:xmax}, ${7:zmax})",
-			"desc": "Constructs a 3D solid right angular wedge/pyramidal prism.",
-			"params": [
-				{"name": "dx", "type": "float", "desc": "Dimension along X."},
-				{"name": "dy", "type": "float", "desc": "Dimension along Y."},
-				{"name": "dz", "type": "float", "desc": "Dimension along Z."}
-			],
-			"example": "var w = Bdg.wedge(30, 20, 15, 5, 0, 25, 15)"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.convex_polyhedron",
-			"sig": "Bdg.convex_polyhedron(points: Array, mode: int = Bdg.Mode.ADD) -> BdgConvexPolyhedron",
-			"returns": "BdgConvexPolyhedron",
-			"insert": "Bdg.convex_polyhedron(${1:points})",
-			"desc": "Computes the 3D Quickhull convex hull solid enclosing an arbitrary cloud of 3D points.",
-			"params": [
-				{"name": "points", "type": "Array[Vector3]", "desc": "Array of 3D vertices."}
-			],
-			"example": "var hull = Bdg.convex_polyhedron([\n    Vector3(0,0,0), Vector3(20,0,0), Vector3(0,20,0), Vector3(0,0,20)\n])"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.hex_bolt",
-			"sig": "Bdg.hex_bolt(thread_radius: float, shaft_length: float, head_width: float, head_thickness: float, mode: int = Bdg.Mode.ADD) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.hex_bolt(${1:3.0}, ${2:25.0}, ${3:10.0}, ${4:4.0})",
-			"desc": "Constructs a parametric ISO metric hexagonal socket / cap bolt solid.",
-			"params": [
-				{"name": "thread_radius", "type": "float", "desc": "Major radius of thread shaft (e.g. 3.0 for M6)."},
-				{"name": "shaft_length", "type": "float", "desc": "Total length of threaded shaft."},
-				{"name": "head_width", "type": "float", "desc": "Width across flats of hexagonal head."},
-				{"name": "head_thickness", "type": "float", "desc": "Height/thickness of bolt head."}
-			],
-			"example": "var m6_bolt = Bdg.hex_bolt(3.0, 30.0, 10.0, 4.0)"
-		},
-		{
-			"category": "3D Solids",
-			"name": "Bdg.hex_nut",
-			"sig": "Bdg.hex_nut(thread_radius: float, width: float, thickness: float, mode: int = Bdg.Mode.ADD) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.hex_nut(${1:3.0}, ${2:10.0}, ${3:5.0})",
-			"desc": "Constructs a parametric ISO metric hexagonal nut with center thread bore.",
-			"params": [
-				{"name": "thread_radius", "type": "float", "desc": "Inner thread radius (e.g. 3.0 for M6)."},
-				{"name": "width", "type": "float", "desc": "Width across flats."},
-				{"name": "thickness", "type": "float", "desc": "Nut height/thickness."}
-			],
-			"example": "var m6_nut = Bdg.hex_nut(3.0, 10.0, 5.0)"
-		},
-
-		# =====================================================================
-		# 4. 2D Sketches
-		# =====================================================================
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.rect",
-			"sig": "Bdg.rect(width: float, height: float, rotation: float = 0.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgRectangle",
-			"returns": "BdgRectangle",
-			"insert": "Bdg.rect(${1:width}, ${2:height})",
-			"desc": "Constructs a 2D planar rectangle with given width and height.",
-			"params": [
-				{"name": "width", "type": "float", "desc": "Width along X."},
-				{"name": "height", "type": "float", "desc": "Height along Y."}
-			],
-			"example": "var r = Bdg.rect(60.0, 40.0)"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.rounded_rect",
-			"sig": "Bdg.rounded_rect(width: float, height: float, radius: float, rotation: float = 0.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgRectangleRounded",
-			"returns": "BdgRectangleRounded",
-			"insert": "Bdg.rounded_rect(${1:width}, ${2:height}, ${3:radius})",
-			"desc": "Constructs a 2D planar rectangle with smooth circular rounded corners.",
-			"params": [
-				{"name": "width", "type": "float", "desc": "Width along X."},
-				{"name": "height", "type": "float", "desc": "Height along Y."},
-				{"name": "radius", "type": "float", "desc": "Corner fillet radius."}
-			],
-			"example": "var rr = Bdg.rounded_rect(80.0, 40.0, 6.0)"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.circle",
-			"sig": "Bdg.circle(radius: float, arc_size: float = 360.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgCircle",
-			"returns": "BdgCircle",
-			"insert": "Bdg.circle(${1:radius})",
-			"desc": "Constructs a 2D circular planar face or sector with given radius.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Circle radius."},
-				{"name": "arc_size", "type": "float", "desc": "Sweep angle in degrees (default 360.0)."}
-			],
-			"example": "var c = Bdg.circle(18.0)"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.ellipse",
-			"sig": "Bdg.ellipse(x_radius: float, y_radius: float, rotation: float = 0.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgEllipse",
-			"returns": "BdgEllipse",
-			"insert": "Bdg.ellipse(${1:x_radius}, ${2:y_radius})",
-			"desc": "Constructs a 2D planar ellipse with semi-major and semi-minor radii.",
-			"params": [
-				{"name": "x_radius", "type": "float", "desc": "Radius along local X."},
-				{"name": "y_radius", "type": "float", "desc": "Radius along local Y."}
-			],
-			"example": "var el = Bdg.ellipse(30.0, 15.0)"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.regular_polygon",
-			"sig": "Bdg.regular_polygon(radius: float, side_count: int, major_radius: bool = true, rotation: float = 0.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgRegularPolygon",
-			"returns": "BdgRegularPolygon",
-			"insert": "Bdg.regular_polygon(${1:radius}, ${2:side_count})",
-			"desc": "Constructs an N-sided equilateral regular polygon (e.g. triangle, pentagon, hexagon, octagon).",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Circumscribed / inscribed radius."},
-				{"name": "side_count", "type": "int", "desc": "Number of polygon sides (>= 3)."}
-			],
-			"example": "var hex = Bdg.regular_polygon(20.0, 6)"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.polygon",
-			"sig": "Bdg.polygon(points: Array, rotation: float = 0.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgPolygon",
-			"returns": "BdgPolygon",
-			"insert": "Bdg.polygon([${0:Vector3.ZERO}])",
-			"desc": "Constructs a 2D planar polygon face bounded by an arbitrary sequence of vertices.",
-			"params": [
-				{"name": "points", "type": "Array[Vector3]", "desc": "Boundary polygon vertices in order."}
-			],
-			"example": "var poly = Bdg.polygon([\n    Vector3(0,0,0), Vector3(40,0,0), Vector3(30,30,0), Vector3(0,20,0)\n])"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.slot_overall",
-			"sig": "Bdg.slot_overall(length: float, width: float, rotation: float = 0.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgSlotOverall",
-			"returns": "BdgSlotOverall",
-			"insert": "Bdg.slot_overall(${1:length}, ${2:width})",
-			"desc": "Constructs a stadium slot profile defined by its total overall length and width.",
-			"params": [
-				{"name": "length", "type": "float", "desc": "Overall tip-to-tip length."},
-				{"name": "width", "type": "float", "desc": "Slot width (2 * radius)."}
-			],
-			"example": "var slot = Bdg.slot_overall(50.0, 16.0)"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.slot_c2c",
-			"sig": "Bdg.slot_c2c(distance: float, radius: float, rotation: float = 0.0, align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgSlotCenterToCenter",
-			"returns": "BdgSlotCenterToCenter",
-			"insert": "Bdg.slot_c2c(${1:distance}, ${2:radius})",
-			"desc": "Constructs a stadium slot profile defined by the distance between arc centers and radius.",
-			"params": [
-				{"name": "distance", "type": "float", "desc": "Center-to-center distance."},
-				{"name": "radius", "type": "float", "desc": "End arc radius."}
-			],
-			"example": "var slot = Bdg.slot_c2c(30.0, 6.0)"
-		},
-		{
-			"category": "2D Sketches",
-			"name": "Bdg.make_face",
-			"sig": "Bdg.make_face(wires_or_edges: Variant) -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.make_face(${0:wires_or_edges})",
-			"desc": "Creates a planar surface Face bounded by a closed wire or collection of boundary curves.",
-			"params": [
-				{"name": "wires_or_edges", "type": "Variant", "desc": "BdgWire, Array of BdgWire, or Array of BdgEdge."}
-			],
-			"example": "var face = Bdg.make_face(my_wire)"
-		},
-
-		# =====================================================================
-		# 5. 1D Curves & Lines
-		# =====================================================================
-		{
-			"category": "1D Curves",
-			"name": "Bdg.line",
-			"sig": "Bdg.line(p1: Vector3, p2: Vector3, mode: int = Bdg.Mode.ADD) -> BdgLine",
-			"returns": "BdgLine",
-			"insert": "Bdg.line(${1:p1}, ${2:p2})",
-			"desc": "Constructs a straight 3D line segment between point p1 and point p2.",
-			"params": [
-				{"name": "p1", "type": "Vector3", "desc": "Start vertex."},
-				{"name": "p2", "type": "Vector3", "desc": "End vertex."}
-			],
-			"example": "var l = Bdg.line(Vector3(0,0,0), Vector3(50,0,0))"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.polyline",
-			"sig": "Bdg.polyline(points: Array, close: bool = false, mode: int = Bdg.Mode.ADD) -> BdgPolyline",
-			"returns": "BdgPolyline",
-			"insert": "Bdg.polyline([${0:points}], false)",
-			"desc": "Constructs a multi-segment connected 3D polyline.",
-			"params": [
-				{"name": "points", "type": "Array[Vector3]", "desc": "Sequential vertex coordinates."},
-				{"name": "close", "type": "bool", "desc": "Whether to connect end back to start."}
-			],
-			"example": "var pl = Bdg.polyline([Vector3(0,0,0), Vector3(20,10,0), Vector3(40,0,0)])"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.arc_3pt",
-			"sig": "Bdg.arc_3pt(p1: Vector3, p2: Vector3, p3: Vector3, mode: int = Bdg.Mode.ADD) -> BdgThreePointArc",
-			"returns": "BdgThreePointArc",
-			"insert": "Bdg.arc_3pt(${1:p1}, ${2:p2}, ${3:p3})",
-			"desc": "Constructs a circular arc passing through three non-collinear 3D points.",
-			"params": [
-				{"name": "p1", "type": "Vector3", "desc": "Start point."},
-				{"name": "p2", "type": "Vector3", "desc": "Intermediate point on arc."},
-				{"name": "p3", "type": "Vector3", "desc": "End point."}
-			],
-			"example": "var arc = Bdg.arc_3pt(Vector3(0,0,0), Vector3(10,10,0), Vector3(20,0,0))"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.center_arc",
-			"sig": "Bdg.center_arc(center: Vector3, radius: float, start_angle: float, arc_size: float, mode: int = Bdg.Mode.ADD) -> BdgCenterArc",
-			"returns": "BdgCenterArc",
-			"insert": "Bdg.center_arc(${1:center}, ${2:radius}, ${3:start_angle}, ${4:arc_size})",
-			"desc": "Constructs a circular arc from center point, radius, starting angle, and sweep arc size in degrees.",
-			"params": [
-				{"name": "center", "type": "Vector3", "desc": "Arc center point."},
-				{"name": "radius", "type": "float", "desc": "Arc radius."},
-				{"name": "start_angle", "type": "float", "desc": "Start angle in degrees."},
-				{"name": "arc_size", "type": "float", "desc": "Sweep span in degrees."}
-			],
-			"example": "var arc = Bdg.center_arc(Vector3.ZERO, 25.0, 0.0, 180.0)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.spline",
-			"sig": "Bdg.spline(points: Array, mode: int = Bdg.Mode.ADD) -> BdgSpline",
-			"returns": "BdgSpline",
-			"insert": "Bdg.spline([${0:points}])",
-			"desc": "Constructs a smooth C2 cubic B-spline interpolating smoothly through control points.",
-			"params": [
-				{"name": "points", "type": "Array[Vector3]", "desc": "Points to interpolate."}
-			],
-			"example": "var sp = Bdg.spline([Vector3(0,0,0), Vector3(15,10,0), Vector3(30,-5,0), Vector3(45,0,0)])"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.bezier",
-			"sig": "Bdg.bezier(control_points: Array, weights: Array = [], mode: int = Bdg.Mode.ADD) -> BdgBezier",
-			"returns": "BdgBezier",
-			"insert": "Bdg.bezier([${0:control_points}])",
-			"desc": "Constructs a rational or polynomial Bézier curve guided by control points.",
-			"params": [
-				{"name": "control_points", "type": "Array[Vector3]", "desc": "Bézier control polygon vertices."},
-				{"name": "weights", "type": "Array[float]", "desc": "Optional rational weights."}
-			],
-			"example": "var bz = Bdg.bezier([Vector3(0,0,0), Vector3(10,30,0), Vector3(30,30,0), Vector3(40,0,0)])"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.helix",
-			"sig": "Bdg.helix(pitch: float, height: float, radius: float, center: Vector3 = Vector3.ZERO, dir: Vector3 = Vector3.UP, angle: float = 0.0, righthanded: bool = true, mode: int = Bdg.Mode.ADD) -> BdgHelix",
-			"returns": "BdgHelix",
-			"insert": "Bdg.helix(${1:pitch}, ${2:height}, ${3:radius})",
-			"desc": "Constructs a 3D cylindrical or conical spiral helix curve.",
-			"params": [
-				{"name": "pitch", "type": "float", "desc": "Axial distance per 360-degree revolution."},
-				{"name": "height", "type": "float", "desc": "Total axial length."},
-				{"name": "radius", "type": "float", "desc": "Helix radius."}
-			],
-			"example": "var h = Bdg.helix(10.0, 50.0, 15.0)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.airfoil",
-			"sig": "Bdg.airfoil(naca_code: String = \"2412\", chord_length: float = 100.0, sample_count: int = 100, mode: int = Bdg.Mode.ADD) -> BdgAirfoil",
-			"returns": "BdgAirfoil",
-			"insert": "Bdg.airfoil(\"${1:2412}\", ${2:100.0})",
-			"desc": "Constructs an analytical NACA 4-digit aerodynamic airfoil profile curve (e.g. NACA 0012, 2415, 4412).",
-			"params": [
-				{"name": "naca_code", "type": "String", "desc": "NACA 4-digit profile code (e.g. '2415')."},
-				{"name": "chord_length", "type": "float", "desc": "Chord length along X."},
-				{"name": "sample_count", "type": "int", "desc": "Cosine spacing resolution (default 100)."}
-			],
-			"example": "var wing_foil = Bdg.airfoil(\"2415\", 120.0)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.blend_curve",
-			"sig": "Bdg.blend_curve(edge1: BdgEdge, edge2: BdgEdge, tangent_scale: float = 1.0, mode: int = Bdg.Mode.ADD) -> BdgBlendCurve",
-			"returns": "BdgBlendCurve",
-			"insert": "Bdg.blend_curve(${1:edge1}, ${2:edge2})",
-			"desc": "Constructs a G1/G2 curvature-continuous blend curve bridging two non-intersecting edges.",
-			"params": [
-				{"name": "edge1", "type": "BdgEdge", "desc": "First curve."},
-				{"name": "edge2", "type": "BdgEdge", "desc": "Second curve."},
-				{"name": "tangent_scale", "type": "float", "desc": "Blend tangent influence scale."}
-			],
-			"example": "var blend = Bdg.blend_curve(e1, e2, 1.2)"
-		},
-
-		# =====================================================================
-		# 6. Operations & Modifiers
-		# =====================================================================
-		{
-			"category": "Operations",
-			"name": "Bdg.extrude",
-			"sig": "Bdg.extrude(to_extrude: Variant, amount: float, dir: Vector3 = Vector3.ZERO, both: bool = false, taper: float = 0.0, mode: int = Bdg.Mode.ADD) -> BdgPart",
-			"returns": "BdgPart",
-			"insert": "Bdg.extrude(${1:profile}, ${2:10.0})",
-			"desc": "Extrudes a 2D planar face or wire into a 3D prismatic solid along normal or custom direction.",
-			"params": [
-				{"name": "to_extrude", "type": "Variant", "desc": "BdgFace, BdgSketch, or BdgWire to extrude."},
-				{"name": "amount", "type": "float", "desc": "Extrusion distance."},
-				{"name": "dir", "type": "Vector3", "desc": "Direction vector (default perpendicular to face)."},
-				{"name": "both", "type": "bool", "desc": "Symmetric extrusion in both directions."},
-				{"name": "taper", "type": "float", "desc": "Draft taper angle in degrees."}
-			],
-			"example": "var solid = Bdg.extrude(sk, 25.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.revolve",
-			"sig": "Bdg.revolve(to_revolve: Variant, angle: float, axis: BdgAxis = null, mode: int = Bdg.Mode.ADD) -> BdgPart",
-			"returns": "BdgPart",
-			"insert": "Bdg.revolve(${1:profile}, ${2:360.0})",
-			"desc": "Revolves a 2D planar face around a 3D rotational axis (default Z axis).",
-			"params": [
-				{"name": "to_revolve", "type": "Variant", "desc": "Planar face or sketch."},
-				{"name": "angle", "type": "float", "desc": "Rotation angle in degrees."},
-				{"name": "axis", "type": "BdgAxis", "desc": "Revolution axis (default BdgAxis.Z)."}
-			],
-			"example": "var torus_part = Bdg.revolve(disk_face, 360.0, BdgAxis.Z)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.sweep",
-			"sig": "Bdg.sweep(profile: Variant, path: Variant, mode: int = Bdg.Mode.ADD) -> BdgShape",
-			"returns": "BdgShape / BdgSolid",
-			"insert": "Bdg.sweep(${1:profile}, ${2:path})",
-			"desc": "Sweeps a 2D cross-section profile face along an arbitrary 3D trajectory wire or curve.",
-			"params": [
-				{"name": "profile", "type": "Variant", "desc": "Cross section face or wire."},
-				{"name": "path", "type": "Variant", "desc": "3D spine path wire or curve."}
-			],
-			"example": "var pipe = Bdg.sweep(circle_face, spline_path)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.loft",
-			"sig": "Bdg.loft(objs: Array, ruled: bool = false, mode: int = Bdg.Mode.ADD) -> BdgSolid",
-			"returns": "BdgSolid",
-			"insert": "Bdg.loft([${0:sections}])",
-			"desc": "Lofts a smooth or ruled 3D solid through a sequence of cross-section wires, faces, or apex vertices.",
-			"params": [
-				{"name": "objs", "type": "Array", "desc": "Array of section wires, faces, or endpoint vertices."},
-				{"name": "ruled", "type": "bool", "desc": "Whether to use ruled straight surface patches (default false)."}
-			],
-			"example": "var wing = Bdg.loft([root_foil, tip_foil])"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.fillet",
-			"sig": "Bdg.fillet(objects: Variant, radius: float) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.fillet(${1:edges}, ${2:radius})",
-			"desc": "Rounds and blends 3D sharp edges of a solid with a smooth constant circular radius.",
-			"params": [
-				{"name": "objects", "type": "Variant", "desc": "Edge or Array of BdgEdge to fillet."},
-				{"name": "radius", "type": "float", "desc": "Fillet radius in millimeters."}
-			],
-			"example": "Bdg.fillet(Bdg.edges(Bdg.last_shape()), 3.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.chamfer",
-			"sig": "Bdg.chamfer(objects: Variant, length: float, length2: float = 0.0) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.chamfer(${1:edges}, ${2:length})",
-			"desc": "Bevels 3D sharp edges of a solid with equal or asymmetrical chamfer distances.",
-			"params": [
-				{"name": "objects", "type": "Variant", "desc": "Edge or Array of BdgEdge."},
-				{"name": "length", "type": "float", "desc": "Chamfer setback distance."},
-				{"name": "length2", "type": "float", "desc": "Optional secondary setback distance."}
-			],
-			"example": "Bdg.chamfer(top_edges, 2.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.hole",
-			"sig": "Bdg.hole(radius: float, depth: float = 0.0, mode: int = Bdg.Mode.SUBTRACT) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.hole(${1:radius}, ${2:depth})",
-			"desc": "Cuts a cylindrical through-hole or blind hole at active locations.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Hole radius."},
-				{"name": "depth", "type": "float", "desc": "Hole depth (0.0 = through all)."}
-			],
-			"example": "Bdg.hole(4.0, 20.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.counter_bore_hole",
-			"sig": "Bdg.counter_bore_hole(radius: float, depth: float, counter_bore_radius: float, counter_bore_depth: float, mode: int = Bdg.Mode.SUBTRACT) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.counter_bore_hole(${1:3.5}, ${2:15.0}, ${3:6.0}, ${4:3.0})",
-			"desc": "Cuts a stepped counterbored bolt hole with cylindrical recess for fastener heads.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Shaft through-hole radius."},
-				{"name": "depth", "type": "float", "desc": "Shaft hole depth."},
-				{"name": "counter_bore_radius", "type": "float", "desc": "Recess counterbore radius."},
-				{"name": "counter_bore_depth", "type": "float", "desc": "Recess counterbore depth."}
-			],
-			"example": "Bdg.counter_bore_hole(3.5, 20.0, 6.0, 4.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.counter_sink_hole",
-			"sig": "Bdg.counter_sink_hole(radius: float, depth: float, counter_sink_radius: float, counter_sink_angle: float = 90.0, mode: int = Bdg.Mode.SUBTRACT) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.counter_sink_hole(${1:3.0}, ${2:15.0}, ${3:5.5}, 90.0)",
-			"desc": "Cuts a conical countersunk screw hole for flush mounting.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Shaft hole radius."},
-				{"name": "depth", "type": "float", "desc": "Shaft hole depth."},
-				{"name": "counter_sink_radius", "type": "float", "desc": "Top countersink bevel radius."},
-				{"name": "counter_sink_angle", "type": "float", "desc": "Countersink cone angle (default 90.0 deg)."}
-			],
-			"example": "Bdg.counter_sink_hole(3.0, 15.0, 5.5, 90.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.fuse",
-			"sig": "Bdg.fuse(a: BdgShape, b: Variant) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.fuse(${1:a}, ${2:b})",
-			"desc": "Performs exact OpenCASCADE Boolean Union fusing shape a with shape b (or list of shapes).",
-			"params": [
-				{"name": "a", "type": "BdgShape", "desc": "Primary shape."},
-				{"name": "b", "type": "Variant", "desc": "Shape or Array of shapes to union."}
-			],
-			"example": "var union_solid = Bdg.fuse(body, [boss1, boss2])"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.cut",
-			"sig": "Bdg.cut(a: BdgShape, b: Variant) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.cut(${1:a}, ${2:b})",
-			"desc": "Performs exact OpenCASCADE Boolean Difference subtracting tool b from workpiece a (A \\ B).",
-			"params": [
-				{"name": "a", "type": "BdgShape", "desc": "Workpiece solid/shape."},
-				{"name": "b", "type": "Variant", "desc": "Tool solid or array of cutting tools."}
-			],
-			"example": "var notched = Bdg.cut(block, cutter)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.intersect",
-			"sig": "Bdg.intersect(a: BdgShape, b: Variant) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.intersect(${1:a}, ${2:b})",
-			"desc": "Performs exact OpenCASCADE Boolean Intersection keeping only common overlapping volume (A ∩ B).",
-			"params": [
-				{"name": "a", "type": "BdgShape", "desc": "First shape."},
-				{"name": "b", "type": "Variant", "desc": "Second shape or array of shapes."}
-			],
-			"example": "var common = Bdg.intersect(sphere, box)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.pack",
-			"sig": "Bdg.pack(parts: Array, sheet_width: float, sheet_height: float, padding: float = 2.0) -> Array",
-			"returns": "Array[BdgShape]",
-			"insert": "Bdg.pack(${1:parts}, ${2:sheet_w}, ${3:sheet_h}, ${4:3.0})",
-			"desc": "Algorithmic 2D nesting and bin-packing optimizer that packs mixed mechanical parts onto stock sheet metal.",
-			"params": [
-				{"name": "parts", "type": "Array", "desc": "Array of 2D/3D shapes to nest."},
-				{"name": "sheet_width", "type": "float", "desc": "Stock sheet width along X."},
-				{"name": "sheet_height", "type": "float", "desc": "Stock sheet height along Y."},
-				{"name": "padding", "type": "float", "desc": "Clearance margin between parts."}
-			],
-			"example": "var nested = Bdg.pack(all_gears, 200.0, 150.0, 4.0)"
-		},
-
-		# =====================================================================
-		# 7. Typography & Technical Drafting
-		# =====================================================================
-		{
-			"category": "Drafting",
-			"name": "Bdg.text",
-			"sig": "Bdg.text(text: String, font_size: float = 10.0, font_name: String = \"Arial\", align: Variant = Bdg.Align.CENTER, mode: int = Bdg.Mode.ADD) -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.text(\"${1:Text}\", ${2:12.0})",
-			"desc": "Renders high-precision 2D/3D vector text glyphs directly using OpenCASCADE's native BRep font engine (lossless curves).",
-			"params": [
-				{"name": "text", "type": "String", "desc": "Text string to render."},
-				{"name": "font_size", "type": "float", "desc": "Cap height font size in mm."},
-				{"name": "font_name", "type": "String", "desc": "System font family name."}
-			],
-			"example": "var label_face = Bdg.text(\"build123d.gd\", 10.0)\nvar label_solid = Bdg.extrude(label_face, 2.0)"
-		},
-		{
-			"category": "Drafting",
-			"name": "Bdg.technical_drawing",
-			"sig": "Bdg.technical_drawing(shape: BdgShape, sheet_size: String = \"A4\") -> BdgTechnicalDrawing",
-			"returns": "BdgTechnicalDrawing",
-			"insert": "Bdg.technical_drawing(${1:shape}, \"A4\")",
-			"desc": "Generates a multi-view orthographic technical drafting sheet with Top, Front, Right, and Isometric views and title block.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "3D CAD model to draft."},
-				{"name": "sheet_size", "type": "String", "desc": "Sheet standard: 'A4', 'A3', 'A2', 'Letter', etc."}
-			],
-			"example": "var drawing = Bdg.technical_drawing(bracket, \"A4\")\nBdg.export_svg(drawing.to_compound(), \"drawing.svg\")"
-		},
-		{
-			"category": "Drafting",
-			"name": "Bdg.dimension_line",
-			"sig": "Bdg.dimension_line(p1: Vector3, p2: Vector3, text: String = \"\", offset: float = 10.0) -> BdgDimensionLine",
-			"returns": "BdgDimensionLine",
-			"insert": "Bdg.dimension_line(${1:p1}, ${2:p2}, \"${3:50.0mm}\", 10.0)",
-			"desc": "Constructs an engineering drafting dimension annotation with extension lines, witness ticks, and text.",
-			"params": [
-				{"name": "p1", "type": "Vector3", "desc": "First measurement witness point."},
-				{"name": "p2", "type": "Vector3", "desc": "Second measurement witness point."},
-				{"name": "text", "type": "String", "desc": "Dimension annotation text."},
-				{"name": "offset", "type": "float", "desc": "Perpendicular offset distance."}
-			],
-			"example": "var dim = Bdg.dimension_line(Vector3(0,0,0), Vector3(80,0,0), \"80.0 mm\", 15.0)"
-		},
-
-		# =====================================================================
-		# 8. Topological Selectors
-		# =====================================================================
-		{
-			"category": "Topology",
-			"name": "Bdg.vertices",
-			"sig": "Bdg.vertices(shape: BdgShape) -> Array[BdgVertex]",
-			"returns": "Array[BdgVertex]",
-			"insert": "Bdg.vertices(${1:shape})",
-			"desc": "Extracts all topological 0D vertices from a shape or solid.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Source CAD shape."}
-			],
-			"example": "for v in Bdg.vertices(my_solid):\n    print(v.to_vector3())"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.edges",
-			"sig": "Bdg.edges(shape: BdgShape) -> Array[BdgEdge]",
-			"returns": "Array[BdgEdge]",
-			"insert": "Bdg.edges(${1:shape})",
-			"desc": "Extracts all topological 1D boundary edges from a shape or solid.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Source CAD shape."}
-			],
-			"example": "var top_edges = Bdg.edges(my_solid).filter(func(e): return e.center().z > 15.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.wires",
-			"sig": "Bdg.wires(shape: BdgShape) -> Array[BdgWire]",
-			"returns": "Array[BdgWire]",
-			"insert": "Bdg.wires(${1:shape})",
-			"desc": "Extracts all connected closed/open wire loops from a shape or solid.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Source CAD shape."}
-			],
-			"example": "var wire_loops = Bdg.wires(my_face)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.faces",
-			"sig": "Bdg.faces(shape: BdgShape) -> Array[BdgFace]",
-			"returns": "Array[BdgFace]",
-			"insert": "Bdg.faces(${1:shape})",
-			"desc": "Extracts all 2D surface faces from a shape or solid.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Source CAD shape."}
-			],
-			"example": "var planar_faces = Bdg.faces(my_solid)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.solids",
-			"sig": "Bdg.solids(shape: BdgShape) -> Array[BdgSolid]",
-			"returns": "Array[BdgSolid]",
-			"insert": "Bdg.solids(${1:shape})",
-			"desc": "Extracts all 3D solid bodies from a shape or compound.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Source CAD shape / compound."}
-			],
-			"example": "var bodies = Bdg.solids(my_assembly.to_compound())"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.edges_to_wires",
-			"sig": "Bdg.edges_to_wires(edges: Array) -> Array[BdgWire]",
-			"returns": "Array[BdgWire]",
-			"insert": "Bdg.edges_to_wires(${1:edges})",
-			"desc": "Topologically sorts and chains an unsorted collection of edges into continuous wires.",
-			"params": [
-				{"name": "edges", "type": "Array[BdgEdge]", "desc": "Edges to connect."}
-			],
-			"example": "var loops = Bdg.edges_to_wires(edge_list)"
-		},
-
-		# =====================================================================
-		# 9. Lossless Exporters & Importers
-		# =====================================================================
-		{
-			"category": "I/O",
-			"name": "Bdg.export_step",
-			"sig": "Bdg.export_step(shape: BdgShape, path: String) -> bool",
-			"returns": "bool",
-			"insert": "Bdg.export_step(${1:shape}, \"${2:model.step}\")",
-			"desc": "Exports shape to standard lossless ISO-10303 STEP AP214 / AP242 CAD format for CNC, injection molding, and mechanical design.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "CAD shape to export."},
-				{"name": "path", "type": "String", "desc": "Destination file path (.step / .stp)."}
-			],
-			"example": "Bdg.export_step(bracket, \"bracket.step\")"
-		},
-		{
-			"category": "I/O",
-			"name": "Bdg.import_step",
-			"sig": "Bdg.import_step(path: String) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.import_step(\"${1:model.step}\")",
-			"desc": "Loads an external STEP CAD file into native OpenCASCADE exact BRep geometry.",
-			"params": [
-				{"name": "path", "type": "String", "desc": "Source STEP file path."}
-			],
-			"example": "var imported_part = Bdg.import_step(\"vendor_bearing.step\")"
-		},
-		{
-			"category": "I/O",
-			"name": "Bdg.export_stl",
-			"sig": "Bdg.export_stl(shape: BdgShape, path: String, linear_deflection: float = 0.01, angular_deflection: float = 0.5, binary: bool = true) -> bool",
-			"returns": "bool",
-			"insert": "Bdg.export_stl(${1:shape}, \"${2:model.stl}\")",
-			"desc": "Tessellates and exports shape to binary or ASCII STL mesh format for 3D printing (slicers).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "CAD shape to export."},
-				{"name": "path", "type": "String", "desc": "Output STL file path."},
-				{"name": "linear_deflection", "type": "float", "desc": "Tessellation tolerance in mm (default 0.01)."},
-				{"name": "binary", "type": "bool", "desc": "Export as compact binary (true) or text (false)."}
-			],
-			"example": "Bdg.export_stl(lego_brick, \"lego.stl\")"
-		},
-		{
-			"category": "I/O",
-			"name": "Bdg.export_obj",
-			"sig": "Bdg.export_obj(shape: BdgShape, path: String, linear_deflection: float = 0.05, angular_deflection: float = 0.5) -> bool",
-			"returns": "bool",
-			"insert": "Bdg.export_obj(${1:shape}, \"${2:model.obj}\")",
-			"desc": "Exports shape to Wavefront OBJ 3D mesh format with vertex normals.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "CAD shape to export."},
-				{"name": "path", "type": "String", "desc": "Destination .obj file path."}
-			],
-			"example": "Bdg.export_obj(my_solid, \"render.obj\")"
-		},
-		{
-			"category": "I/O",
-			"name": "Bdg.export_gltf",
-			"sig": "Bdg.export_gltf(shape: BdgShape, path: String, linear_deflection: float = 0.05, angular_deflection: float = 0.5) -> bool",
-			"returns": "bool",
-			"insert": "Bdg.export_gltf(${1:shape}, \"${2:model.gltf}\")",
-			"desc": "Exports shape to standard GLTF 2.0 / GLB 3D scene format for web viewers and Godot games.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "CAD shape to export."},
-				{"name": "path", "type": "String", "desc": "Destination .gltf file path."}
-			],
-			"example": "Bdg.export_gltf(assembly, \"game_asset.gltf\")"
-		},
-		{
-			"category": "I/O",
-			"name": "Bdg.export_svg",
-			"sig": "Bdg.export_svg(shape: BdgShape, path: String, view_dir: Vector3 = Vector3.UP) -> bool",
-			"returns": "bool",
-			"insert": "Bdg.export_svg(${1:shape}, \"${2:drawing.svg}\")",
-			"desc": "Projects shape and exports 2D vector technical drawing in scalable SVG format for laser cutting and documentation.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "CAD shape or drawing."},
-				{"name": "path", "type": "String", "desc": "Destination .svg file path."},
-				{"name": "view_dir", "type": "Vector3", "desc": "Orthographic projection view vector."}
-			],
-			"example": "Bdg.export_svg(sheet_pack, \"cut_sheet.svg\")"
-		},
-		{
-			"category": "I/O",
-			"name": "Bdg.export_dxf",
-			"sig": "Bdg.export_dxf(shape: BdgShape, path: String, view_dir: Vector3 = Vector3.UP) -> bool",
-			"returns": "bool",
-			"insert": "Bdg.export_dxf(${1:shape}, \"${2:drawing.dxf}\")",
-			"desc": "Projects shape and exports 2D CAD engineering drawing in AutoCAD DXF format for CNC waterjet / plasma cutters.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "CAD shape or drawing."},
-				{"name": "path", "type": "String", "desc": "Destination .dxf file path."}
-			],
-			"example": "Bdg.export_dxf(nested_sheet, \"cnc_sheet.dxf\")"
-		},
-
-		# =====================================================================
-		# 10. Assemblies & Hierarchies
-		# =====================================================================
-		{
-			"category": "Assemblies",
-			"name": "Bdg.assembly",
-			"sig": "Bdg.assembly(shape: BdgShape = null, label: String = \"\", loc: BdgLocation = null, color: Color = Color.WHITE) -> BdgAssembly",
-			"returns": "BdgAssembly",
-			"insert": "Bdg.assembly(${1:shape}, \"${2:Label}\", null, Color(${3:0.8, 0.8, 0.9}))",
-			"desc": "Constructs a hierarchical CAD Assembly component supporting named sub-assemblies, relative transformations, joint kinematics, and distinct component colors.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Component 3D shape."},
-				{"name": "label", "type": "String", "desc": "Unique component label name."},
-				{"name": "loc", "type": "BdgLocation", "desc": "Relative 3D transform location."},
-				{"name": "color", "type": "Color", "desc": "Display shader color."}
-			],
-			"example": "var asm = Bdg.assembly()\nasm.add_child(Bdg.assembly(bolt, \"Bolt\", null, Color.GRAY))\nasm.add_child(Bdg.assembly(nut, \"Nut\", Bdg.location(Vector3(0,0,20)), Color.YELLOW))\nreturn asm.to_compound()"
-		},
-
-		# =====================================================================
-		# 11. Units & Constants
-		# =====================================================================
-		{
-			"category": "Constants",
-			"name": "Bdg.MM",
-			"sig": "Bdg.MM = 1.0",
-			"returns": "float",
-			"insert": "Bdg.MM",
-			"desc": "Standard metric millimeter unit scalar (1.0).",
-			"params": [],
-			"example": "var length = 50.0 * Bdg.MM"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.IN",
-			"sig": "Bdg.IN = 25.4",
-			"returns": "float",
-			"insert": "Bdg.IN",
-			"desc": "Imperial inch unit conversion factor (25.4 mm).",
-			"params": [],
-			"example": "var thickness = 0.25 * Bdg.IN"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.FT",
-			"sig": "Bdg.FT = 304.8",
-			"returns": "float",
-			"insert": "Bdg.FT",
-			"desc": "Imperial foot unit conversion factor (304.8 mm).",
-			"params": [],
-			"example": "var beam_len = 6.0 * Bdg.FT"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.THOU",
-			"sig": "Bdg.THOU = 0.0254",
-			"returns": "float",
-			"insert": "Bdg.THOU",
-			"desc": "Precision mil / thousandth of an inch unit conversion factor (0.0254 mm).",
-			"params": [],
-			"example": "var tolerance = 5.0 * Bdg.THOU"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.Mode.ADD",
-			"sig": "Bdg.Mode.ADD",
-			"returns": "int",
-			"insert": "Bdg.Mode.ADD",
-			"desc": "Boolean addition mode: unions created geometry with the active workpiece.",
-			"params": [],
-			"example": "Bdg.add(boss, Bdg.Mode.ADD)"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.Mode.SUBTRACT",
-			"sig": "Bdg.Mode.SUBTRACT",
-			"returns": "int",
-			"insert": "Bdg.Mode.SUBTRACT",
-			"desc": "Boolean subtraction mode: cuts created geometry from the active workpiece.",
-			"params": [],
-			"example": "Bdg.add(pocket, Bdg.Mode.SUBTRACT)"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.Mode.INTERSECT",
-			"sig": "Bdg.Mode.INTERSECT",
-			"returns": "int",
-			"insert": "Bdg.Mode.INTERSECT",
-			"desc": "Boolean intersection mode: retains only common volume.",
-			"params": [],
-			"example": "Bdg.add(mask, Bdg.Mode.INTERSECT)"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.Align.CENTER",
-			"sig": "Bdg.Align.CENTER",
-			"returns": "int",
-			"insert": "Bdg.Align.CENTER",
-			"desc": "Centers the object bounding box at the location origin.",
-			"params": [],
-			"example": "Bdg.box(20, 20, 20, Vector3.ZERO, Bdg.Align.CENTER)"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.Align.MIN",
-			"sig": "Bdg.Align.MIN",
-			"returns": "int",
-			"insert": "Bdg.Align.MIN",
-			"desc": "Aligns the minimum coordinate edge with the origin.",
-			"params": [],
-			"example": "Bdg.box(20, 20, 20, Vector3.ZERO, Bdg.Align.MIN)"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.Align.MAX",
-			"sig": "Bdg.Align.MAX",
-			"returns": "int",
-			"insert": "Bdg.Align.MAX",
-			"desc": "Aligns the maximum coordinate edge with the origin.",
-			"params": [],
-			"example": "Bdg.box(20, 20, 20, Vector3.ZERO, Bdg.Align.MAX)"
-		},
-		# =====================================================================
-		# 19. Raw Topology & Factory Wrappers (functional DSL)
-		# =====================================================================
-		{
-			"category": "Topology",
-			"name": "Bdg.make_box",
-			"sig": "Bdg.make_box(length: float, width: float, height: float, plane: BdgPlane = null) -> BdgSolid",
-			"returns": "BdgSolid",
-			"insert": "Bdg.make_box(${0:10}, ${1:10}, ${2:10})",
-			"desc": "Box solid with its base corner at the plane origin (raw solid, not a PartObject).",
-			"params": [
-				{"name": "length", "type": "float", "desc": "Size along X."},
-				{"name": "width", "type": "float", "desc": "Size along Y."},
-				{"name": "height", "type": "float", "desc": "Size along Z."},
-				{"name": "plane", "type": "BdgPlane", "desc": "Base plane (default XY)."}
-			],
-			"example": "var b = Bdg.make_box(3.0, 3.0, 3.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_cylinder",
-			"sig": "Bdg.make_cylinder(radius: float, height: float, plane: BdgPlane = null, angle: float = 360.0) -> BdgSolid",
-			"returns": "BdgSolid",
-			"insert": "Bdg.make_cylinder(${0:radius}, ${1:height})",
-			"desc": "Cylinder solid with base center at the plane origin (raw solid, not a PartObject).",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Radius of the cylinder."},
-				{"name": "height", "type": "float", "desc": "Height along the plane normal."},
-				{"name": "plane", "type": "BdgPlane", "desc": "Base plane (default XY)."},
-				{"name": "angle", "type": "float", "desc": "Sweep angle in degrees."}
-			],
-			"example": "var c = Bdg.make_cylinder(30.0, 10.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_sphere",
-			"sig": "Bdg.make_sphere(radius: float, plane: BdgPlane = null) -> BdgSolid",
-			"returns": "BdgSolid",
-			"insert": "Bdg.make_sphere(${0:radius})",
-			"desc": "Sphere solid centered at the plane origin.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Radius of the sphere."},
-				{"name": "plane", "type": "BdgPlane", "desc": "Center plane (default XY)."}
-			],
-			"example": "var s = Bdg.make_sphere(40.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_loft",
-			"sig": "Bdg.make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.make_loft(${0:objs})",
-			"desc": "Loft solid through an ordered array of wire sections (or apex vertices).",
-			"params": [
-				{"name": "objs", "type": "Array", "desc": "Ordered wires or vertices to loft through."},
-				{"name": "ruled", "type": "bool", "desc": "Use ruled (straight) interpolation."},
-				{"name": "as_solid", "type": "bool", "desc": "Return a solid instead of a shell."}
-			],
-			"example": "var k = Bdg.make_loft([base_wire, top_wire], true)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_rect",
-			"sig": "Bdg.make_rect(width: float, height: float, plane: BdgPlane = null) -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.make_rect(${0:width}, ${1:height})",
-			"desc": "Planar rectangle face centered on the given plane (default XY).",
-			"params": [
-				{"name": "width", "type": "float", "desc": "Width along the plane X direction."},
-				{"name": "height", "type": "float", "desc": "Height along the plane Y direction."},
-				{"name": "plane", "type": "BdgPlane", "desc": "Face plane (default XY)."}
-			],
-			"example": "var f = Bdg.make_rect(18.0, 18.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_rounded_rect",
-			"sig": "Bdg.make_rounded_rect(width: float, height: float, radius: float, plane: BdgPlane = null) -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.make_rounded_rect(${0:width}, ${1:height}, ${2:radius})",
-			"desc": "Planar rounded-corner rectangle face centered on the given plane.",
-			"params": [
-				{"name": "width", "type": "float", "desc": "Width along the plane X direction."},
-				{"name": "height", "type": "float", "desc": "Height along the plane Y direction."},
-				{"name": "radius", "type": "float", "desc": "Corner radius."},
-				{"name": "plane", "type": "BdgPlane", "desc": "Face plane (default XY)."}
-			],
-			"example": "var f = Bdg.make_rounded_rect(1.25, 3.0, 0.2)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_circle",
-			"sig": "Bdg.make_circle(radius: float, plane: BdgPlane = null) -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.make_circle(${0:radius})",
-			"desc": "Planar circle face centered on the given plane.",
-			"params": [
-				{"name": "radius", "type": "float", "desc": "Radius of the circle."},
-				{"name": "plane", "type": "BdgPlane", "desc": "Face plane (default XY)."}
-			],
-			"example": "var f = Bdg.make_circle(1.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_slot",
-			"sig": "Bdg.make_slot(length: float, width: float, rotation_deg: float = 0.0) -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.make_slot(${0:length}, ${1:width})",
-			"desc": "Stadium-slot face with overall length and width, optionally rotated in degrees.",
-			"params": [
-				{"name": "length", "type": "float", "desc": "Overall length of the slot."},
-				{"name": "width", "type": "float", "desc": "Width of the slot."},
-				{"name": "rotation_deg", "type": "float", "desc": "Rotation in degrees."}
-			],
-			"example": "var f = Bdg.make_slot(3.0, 1.2, 15.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_from_wires",
-			"sig": "Bdg.make_from_wires(outer_wire: BdgWire, inner_wires: Array = []) -> BdgFace",
-			"returns": "BdgFace",
-			"insert": "Bdg.make_from_wires(${0:outer_wire})",
-			"desc": "Face built from an outer boundary wire and optional inner hole wires.",
-			"params": [
-				{"name": "outer_wire", "type": "BdgWire", "desc": "Outer boundary wire."},
-				{"name": "inner_wires", "type": "Array", "desc": "Optional array of inner hole wires."}
-			],
-			"example": "var f = Bdg.make_from_wires(outer, [hole_wire])"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_wire",
-			"sig": "Bdg.make_wire(edges: Array) -> BdgWire",
-			"returns": "BdgWire",
-			"insert": "Bdg.make_wire(${0:edges})",
-			"desc": "Wire built from an array of edges, wires, or 1D shapes.",
-			"params": [
-				{"name": "edges", "type": "Array", "desc": "Edges/wires to connect into a single wire."}
-			],
-			"example": "var w = Bdg.make_wire([e1, e2, arc])"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_polygon",
-			"sig": "Bdg.make_polygon(points: Array, close: bool = true) -> BdgWire",
-			"returns": "BdgWire",
-			"insert": "Bdg.make_polygon(${0:points})",
-			"desc": "Polygon wire from an ordered list of points (closed by default).",
-			"params": [
-				{"name": "points", "type": "Array", "desc": "Ordered array of Vector3 vertices."},
-				{"name": "close", "type": "bool", "desc": "Close the wire back to the first point."}
-			],
-			"example": "var w = Bdg.make_polygon([p1, p2, p3])"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_rect_wire",
-			"sig": "Bdg.make_rect_wire(width: float, height: float, plane: BdgPlane = null) -> BdgWire",
-			"returns": "BdgWire",
-			"insert": "Bdg.make_rect_wire(${0:width}, ${1:height})",
-			"desc": "Rectangle wire (1D boundary, not a face) centered on the given plane.",
-			"params": [
-				{"name": "width", "type": "float", "desc": "Width along the plane X direction."},
-				{"name": "height", "type": "float", "desc": "Height along the plane Y direction."},
-				{"name": "plane", "type": "BdgPlane", "desc": "Wire plane (default XY)."}
-			],
-			"example": "var w = Bdg.make_rect_wire(18.0, 18.0)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_line",
-			"sig": "Bdg.make_line(point1: Vector3, point2: Vector3) -> BdgEdge",
-			"returns": "BdgEdge",
-			"insert": "Bdg.make_line(${0:p1}, ${1:p2})",
-			"desc": "Straight line edge between two points.",
-			"params": [
-				{"name": "point1", "type": "Vector3", "desc": "Start point."},
-				{"name": "point2", "type": "Vector3", "desc": "End point."}
-			],
-			"example": "var e = Bdg.make_line(p0, p1)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_radius_arc",
-			"sig": "Bdg.make_radius_arc(start_point: Vector3, end_point: Vector3, radius: float, short_sagitta: bool = true) -> BdgEdge",
-			"returns": "BdgEdge",
-			"insert": "Bdg.make_radius_arc(${0:start}, ${1:end}, ${2:radius})",
-			"desc": "Circular arc edge between two points with a given radius.",
-			"params": [
-				{"name": "start_point", "type": "Vector3", "desc": "Arc start point."},
-				{"name": "end_point", "type": "Vector3", "desc": "Arc end point."},
-				{"name": "radius", "type": "float", "desc": "Arc radius."},
-				{"name": "short_sagitta", "type": "bool", "desc": "Pick the short arc side."}
-			],
-			"example": "var e = Bdg.make_radius_arc(p1, p2, 50.0, true)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_spline",
-			"sig": "Bdg.make_spline(points: Array, tangents: Array = [], scale: bool = true) -> BdgEdge",
-			"returns": "BdgEdge",
-			"insert": "Bdg.make_spline(${0:points})",
-			"desc": "B-Spline edge through points with optional start/end tangents.",
-			"params": [
-				{"name": "points", "type": "Array", "desc": "Array of Vector3 control points."},
-				{"name": "tangents", "type": "Array", "desc": "Optional start/end tangent vectors."},
-				{"name": "scale", "type": "bool", "desc": "Scale tangents to the curve."}
-			],
-			"example": "var e = Bdg.make_spline([p0, p1, p2], [t0, t2], false)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_compound",
-			"sig": "Bdg.make_compound(shapes: Array) -> BdgCompound",
-			"returns": "BdgCompound",
-			"insert": "Bdg.make_compound(${0:shapes})",
-			"desc": "Compound of the given shapes (keeps the inputs unmodified).",
-			"params": [
-				{"name": "shapes", "type": "Array", "desc": "Array of shapes to group."}
-			],
-			"example": "var c = Bdg.make_compound([h1, h2, h3])"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.make_pipe_shell",
-			"sig": "Bdg.make_pipe_shell(path_wire: BdgWire, sections: Array, as_solid: bool = true) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.make_pipe_shell(${0:path_wire}, ${1:sections})",
-			"desc": "Swept shell/solid along a path wire with cross-section faces.",
-			"params": [
-				{"name": "path_wire", "type": "BdgWire", "desc": "Path (wire) to sweep along."},
-				{"name": "sections", "type": "Array", "desc": "Cross-section faces."},
-				{"name": "as_solid", "type": "bool", "desc": "Return a solid instead of a shell."}
-			],
-			"example": "var h = Bdg.make_pipe_shell(path, [profile], true)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.axis",
-			"sig": "Bdg.axis(origin: Vector3, direction: Vector3) -> BdgAxis",
-			"returns": "BdgAxis",
-			"insert": "Bdg.axis(${0:origin}, ${1:direction})",
-			"desc": "Axis through an origin point in the given direction.",
-			"params": [
-				{"name": "origin", "type": "Vector3", "desc": "Axis origin point."},
-				{"name": "direction", "type": "Vector3", "desc": "Axis direction vector."}
-			],
-			"example": "var ax = Bdg.axis(p.origin, p.z_dir)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.axis_x",
-			"sig": "Bdg.axis_x() -> BdgAxis",
-			"returns": "BdgAxis",
-			"insert": "Bdg.axis_x()",
-			"desc": "World X axis.",
-			"params": [],
-			"example": "var ax = Bdg.axis_x()"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.axis_y",
-			"sig": "Bdg.axis_y() -> BdgAxis",
-			"returns": "BdgAxis",
-			"insert": "Bdg.axis_y()",
-			"desc": "World Y axis.",
-			"params": [],
-			"example": "var ax = Bdg.axis_y()"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.axis_z",
-			"sig": "Bdg.axis_z() -> BdgAxis",
-			"returns": "BdgAxis",
-			"insert": "Bdg.axis_z()",
-			"desc": "World Z axis.",
-			"params": [],
-			"example": "var ax = Bdg.axis_z()"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.grid_locations_list",
-			"sig": "Bdg.grid_locations_list(x_spacing: float, y_spacing: float, x_count: int, y_count: int) -> Array[BdgLocation]",
-			"returns": "Array[BdgLocation]",
-			"insert": "Bdg.grid_locations_list(${0:x_spacing}, ${1:y_spacing}, ${2:x_count}, ${3:y_count})",
-			"desc": "Rectangular grid pattern locations (Array of BdgLocation), centered at origin.",
-			"params": [
-				{"name": "x_spacing", "type": "float", "desc": "Spacing along X."},
-				{"name": "y_spacing", "type": "float", "desc": "Spacing along Y."},
-				{"name": "x_count", "type": "int", "desc": "Number of columns."},
-				{"name": "y_count", "type": "int", "desc": "Number of rows."}
-			],
-			"example": "var locs = Bdg.grid_locations_list(20.0, 20.0, 2, 2)"
-		},
-		{
-			"category": "Patterns",
-			"name": "Bdg.hex_locations_list",
-			"sig": "Bdg.hex_locations_list(apothem: float, x_count: int, y_count: int) -> Array[BdgLocation]",
-			"returns": "Array[BdgLocation]",
-			"insert": "Bdg.hex_locations_list(${0:apothem}, ${1:x_count}, ${2:y_count})",
-			"desc": "Hexagonal packing pattern locations (Array of BdgLocation), centered at origin.",
-			"params": [
-				{"name": "apothem", "type": "float", "desc": "Apothem (inradius) of the hexagons."},
-				{"name": "x_count", "type": "int", "desc": "Number of columns."},
-				{"name": "y_count", "type": "int", "desc": "Number of rows."}
-			],
-			"example": "var locs = Bdg.hex_locations_list(6.0, 3, 3)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.shape_list",
-			"sig": "Bdg.shape_list(shapes: Array) -> BdgShapeList",
-			"returns": "BdgShapeList",
-			"insert": "Bdg.shape_list(${0:shapes})",
-			"desc": "Shape list wrapper around an array of shapes.",
-			"params": [
-				{"name": "shapes", "type": "Array", "desc": "Array of shapes."}
-			],
-			"example": "var faces = Bdg.shape_list(base_part.faces())"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.sort_by",
-			"sig": "Bdg.sort_by(shape_list: BdgShapeList, sort_by: Variant, reverse: bool = false) -> BdgShapeList",
-			"returns": "BdgShapeList",
-			"insert": "Bdg.sort_by(${0:shape_list}, ${1:sort_by})",
-			"desc": "Sort a shape list by a callable key, BdgAxis, or BdgEnums.SortBy criterion.",
-			"params": [
-				{"name": "shape_list", "type": "BdgShapeList", "desc": "List to sort."},
-				{"name": "sort_by", "type": "Variant", "desc": "Callable, BdgAxis, or BdgEnums.SortBy."},
-				{"name": "reverse", "type": "bool", "desc": "Sort in reverse order."}
-			],
-			"example": "var tops = Bdg.sort_by(faces, Bdg.axis_z()).at(-1)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.at",
-			"sig": "Bdg.at(shape_list: BdgShapeList, index: int) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.at(${0:shape_list}, ${1:index})",
-			"desc": "Index into a shape list (negative indexes from the end).",
-			"params": [
-				{"name": "shape_list", "type": "BdgShapeList", "desc": "List to index."},
-				{"name": "index", "type": "int", "desc": "Index (supports negative)."}
-			],
-			"example": "var top = Bdg.at(tops, 0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.translate",
-			"sig": "Bdg.translate(shape: BdgShape, v: Vector3) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.translate(${0:shape}, ${1:v})",
-			"desc": "Translate a shape by a displacement vector.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to translate."},
-				{"name": "v", "type": "Vector3", "desc": "Displacement vector."}
-			],
-			"example": "var moved = Bdg.translate(box, Vector3(0, 0, 5))"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.scaled",
-			"sig": "Bdg.scaled(shape: BdgShape, factor: Variant, center: Vector3 = Vector3.ZERO) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.scaled(${0:shape}, ${1:factor})",
-			"desc": "Scale a shape about a center and return a new copy. factor may be a uniform float or a per-axis Vector3 (non-uniform, build123d `scale(by=...)`).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to scale."},
-				{"name": "factor", "type": "Variant", "desc": "Uniform float or per-axis Vector3 scale factor."},
-				{"name": "center", "type": "Vector3", "desc": "Scale center (default origin)."}
-			],
-			"example": "var cavity = Bdg.scaled(key_solid, Vector3(0.925, 0.925, 0.85))"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.rotate",
-			"sig": "Bdg.rotate(shape: BdgShape, axis: BdgAxis, angle_deg: float) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.rotate(${0:shape}, ${1:axis}, ${2:angle_deg})",
-			"desc": "Rotate a shape about an axis by an angle in degrees.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to rotate."},
-				{"name": "axis", "type": "BdgAxis", "desc": "Rotation axis."},
-				{"name": "angle_deg", "type": "float", "desc": "Rotation angle in degrees."}
-			],
-			"example": "var r = Bdg.rotate(rect, rot_axis, 45.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.move",
-			"sig": "Bdg.move(shape: BdgShape, loc: BdgLocation) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.move(${0:shape}, ${1:loc})",
-			"desc": "Move a shape to a location (position + orientation).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to move."},
-				{"name": "loc", "type": "BdgLocation", "desc": "Target location."}
-			],
-			"example": "var m = Bdg.move(slot_face, loc)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.clean",
-			"sig": "Bdg.clean(shape: BdgShape) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.clean(${0:shape})",
-			"desc": "Clean / heal a shape (remove nulls, fix tolerances, reorder).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to clean."}
-			],
-			"example": "var out = Bdg.clean(part)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.center",
-			"sig": "Bdg.center(shape: BdgShape) -> Vector3",
-			"returns": "Vector3",
-			"insert": "Bdg.center(${0:shape})",
-			"desc": "Centroid of a shape.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to measure."}
-			],
-			"example": "var c = Bdg.center(edge)"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.geom_type",
-			"sig": "Bdg.geom_type(shape: BdgShape) -> int",
-			"returns": "int",
-			"insert": "Bdg.geom_type(${0:shape})",
-			"desc": "Geometric type enum value of a shape (Bdg.GeomType.LINE, CIRCLE, PLANE, ...).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to inspect."}
-			],
-			"example": "if Bdg.geom_type(face) == Bdg.GeomType.PLANE:"
-		},
-		{
-			"category": "Topology",
-			"name": "Bdg.to_plane",
-			"sig": "Bdg.to_plane(face: BdgFace) -> BdgPlane",
-			"returns": "BdgPlane",
-			"insert": "Bdg.to_plane(${0:face})",
-			"desc": "Base plane of a planar face.",
-			"params": [
-				{"name": "face", "type": "BdgFace", "desc": "Planar face."}
-			],
-			"example": "var p = Bdg.to_plane(face)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.length",
-			"sig": "Bdg.length(edge: BdgMixin1D) -> float",
-			"returns": "float",
-			"insert": "Bdg.length(${0:edge})",
-			"desc": "Length of a 1D edge or wire.",
-			"params": [
-				{"name": "edge", "type": "BdgMixin1D", "desc": "Edge or wire."}
-			],
-			"example": "var L = Bdg.length(path_edge)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.param_at_distance",
-			"sig": "Bdg.param_at_distance(edge: BdgMixin1D, dist: float) -> float",
-			"returns": "float",
-			"insert": "Bdg.param_at_distance(${0:edge}, ${1:dist})",
-			"desc": "Parameter value (u) at a given distance along a 1D edge/wire.",
-			"params": [
-				{"name": "edge", "type": "BdgMixin1D", "desc": "Edge or wire."},
-				{"name": "dist", "type": "float", "desc": "Distance along the curve."}
-			],
-			"example": "var u = Bdg.param_at_distance(path_edge, target_dist)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.position_at",
-			"sig": "Bdg.position_at(edge: BdgMixin1D, position: float) -> Vector3",
-			"returns": "Vector3",
-			"insert": "Bdg.position_at(${0:edge}, ${1:u})",
-			"desc": "Point position at parameter value u along a 1D edge/wire.",
-			"params": [
-				{"name": "edge", "type": "BdgMixin1D", "desc": "Edge or wire."},
-				{"name": "position", "type": "float", "desc": "Parameter value u in [0, 1]."}
-			],
-			"example": "var p = Bdg.position_at(handle_spline, 0.0)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.tangent_at",
-			"sig": "Bdg.tangent_at(edge: BdgMixin1D, position: float) -> Vector3",
-			"returns": "Vector3",
-			"insert": "Bdg.tangent_at(${0:edge}, ${1:u})",
-			"desc": "Tangent direction vector at parameter value u along a 1D edge/wire.",
-			"params": [
-				{"name": "edge", "type": "BdgMixin1D", "desc": "Edge or wire."},
-				{"name": "position", "type": "float", "desc": "Parameter value u in [0, 1]."}
-			],
-			"example": "var t = Bdg.tangent_at(handle_spline, 0.0)"
-		},
-		{
-			"category": "1D Curves",
-			"name": "Bdg.normal_at",
-			"sig": "Bdg.normal_at(edge: BdgMixin1D, position: float) -> Vector3",
-			"returns": "Vector3",
-			"insert": "Bdg.normal_at(${0:edge}, ${1:u})",
-			"desc": "Normal direction vector at parameter value u along a 1D edge/wire.",
-			"params": [
-				{"name": "edge", "type": "BdgMixin1D", "desc": "Edge or wire."},
-				{"name": "position", "type": "float", "desc": "Parameter value u in [0, 1]."}
-			],
-			"example": "var n = Bdg.normal_at(handle_spline, 0.0)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.offset_shape",
-			"sig": "Bdg.offset_shape(shape: BdgShape, amount: float, openings: Array = []) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.offset_shape(${0:shape}, ${1:amount})",
-			"desc": "Solid offset / shell operation (negative amount shells inward).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to offset."},
-				{"name": "amount", "type": "float", "desc": "Offset distance (negative shells inward)."},
-				{"name": "openings", "type": "Array", "desc": "Faces to leave open."}
-			],
-			"example": "var shell = Bdg.offset_shape(solid, -2.0, top_faces)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.fillet_edges",
-			"sig": "Bdg.fillet_edges(shape: BdgShape, radius: float, edge_list: Array = []) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.fillet_edges(${0:shape}, ${1:radius}, ${2:edge_list})",
-			"desc": "Fillet specific edges of a shape with a given radius.",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Shape to fillet."},
-				{"name": "radius", "type": "float", "desc": "Fillet radius."},
-				{"name": "edge_list", "type": "Array", "desc": "Edges to fillet (empty = all)."}
-			],
-			"example": "var f = Bdg.fillet_edges(key_solid, 1.0, top_edges)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.extrude_vec",
-			"sig": "Bdg.extrude_vec(shape: BdgShape, direction: Vector3) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.extrude_vec(${0:shape}, ${1:direction})",
-			"desc": "Extrude a face by a full 3D direction vector (magnitude = distance).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Face to extrude."},
-				{"name": "direction", "type": "Vector3", "desc": "Extrusion direction and distance."}
-			],
-			"example": "var solid = Bdg.extrude_vec(face, p.z_dir * 0.1)"
-		},
-		{
-			"category": "Operations",
-			"name": "Bdg.revolve_axis",
-			"sig": "Bdg.revolve_axis(shape: BdgShape, angle_deg: float, axis: BdgAxis = BdgAxis.Z) -> BdgShape",
-			"returns": "BdgShape",
-			"insert": "Bdg.revolve_axis(${0:shape}, ${1:angle_deg})",
-			"desc": "Revolve a face about an axis by an angle in degrees (raw result, not wrapped).",
-			"params": [
-				{"name": "shape", "type": "BdgShape", "desc": "Face to revolve."},
-				{"name": "angle_deg", "type": "float", "desc": "Revolve angle in degrees."},
-				{"name": "axis", "type": "BdgAxis", "desc": "Revolve axis (default Z)."}
-			],
-			"example": "var solid = Bdg.revolve_axis(coin_face, 360.0, Bdg.axis_z())"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.GeomType",
-			"sig": "Bdg.GeomType (enum alias of BdgEnums.GeomType)",
-			"returns": "int enum",
-			"insert": "Bdg.GeomType.",
-			"desc": "Enum of shape geometric types: LINE, CIRCLE, ARC, ELLIPSE, HYPERBOLA, PARABOLA, BEZIER, BSPLINE, OFFSET, OTHER, PLANE, CYLINDER, CONE, SPHERE, TORUS.",
-			"params": [],
-			"example": "if Bdg.geom_type(face) == Bdg.GeomType.PLANE:"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.GeomType.PLANE",
-			"sig": "Bdg.GeomType.PLANE",
-			"returns": "int",
-			"insert": "Bdg.GeomType.PLANE",
-			"desc": "Planar surface geometric type.",
-			"params": [],
-			"example": "if Bdg.geom_type(face) == Bdg.GeomType.PLANE:"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.GeomType.CIRCLE",
-			"sig": "Bdg.GeomType.CIRCLE",
-			"returns": "int",
-			"insert": "Bdg.GeomType.CIRCLE",
-			"desc": "Circular curve geometric type.",
-			"params": [],
-			"example": "if Bdg.geom_type(edge) == Bdg.GeomType.CIRCLE:"
-		},
-		{
-			"category": "Constants",
-			"name": "Bdg.GeomType.LINE",
-			"sig": "Bdg.GeomType.LINE",
-			"returns": "int",
-			"insert": "Bdg.GeomType.LINE",
-			"desc": "Linear curve geometric type.",
-			"params": [],
-			"example": "if Bdg.geom_type(edge) == Bdg.GeomType.LINE:"
-		}
+		{"category": "Topology", "name": "BdgVertex.center", "sig": "BdgVertex.center() -> Vector3", "returns": "Vector3", "desc": "Position of the vertex", "insert": "BdgVertex.center()"},
+		{"category": "Topology", "name": "BdgVertex.position", "sig": "BdgVertex.position() -> Vector3", "returns": "Vector3", "desc": "Vector3 position aliases", "insert": "BdgVertex.position()"},
+		{"category": "Topology", "name": "BdgVertex.to_vector3", "sig": "BdgVertex.to_vector3() -> Vector3", "returns": "Vector3", "desc": "Method to_vector3 in class BdgVertex.", "insert": "BdgVertex.to_vector3()"},
+		{"category": "Topology", "name": "BdgVertex.make_vertex", "sig": "static BdgVertex.make_vertex(p: Vector3) -> BdgVertex", "returns": "BdgVertex", "desc": "Create a vertex at a point", "insert": "BdgVertex.make_vertex(${0})"},
+		{"category": "Topology", "name": "BdgVertex.to_tuple", "sig": "BdgVertex.to_tuple() -> Array", "returns": "Array", "desc": "Convert vertex position to array tuple [x, y, z]", "insert": "BdgVertex.to_tuple()"},
+		{"category": "Topology", "name": "BdgVertex.split", "sig": "BdgVertex.split(other: Variant) -> Array", "returns": "Array", "desc": "Split vertex by vector/plane", "insert": "BdgVertex.split(${0})"},
+		{"category": "Topology", "name": "BdgEdge.radius", "sig": "BdgEdge.radius() -> float", "returns": "float", "desc": "radius of an underlying circle or ellipse", "insert": "BdgEdge.radius()"},
+		{"category": "Topology", "name": "BdgEdge.arc_center", "sig": "BdgEdge.arc_center() -> Vector3", "returns": "Vector3", "desc": "center of an underlying circle or ellipse geometry", "insert": "BdgEdge.arc_center()"},
+		{"category": "Topology", "name": "BdgEdge.make_line", "sig": "static BdgEdge.make_line(point1: Vector3, point2: Vector3) -> BdgEdge", "returns": "BdgEdge", "desc": "linear edge between two points", "insert": "BdgEdge.make_line(${0})"},
+		{"category": "Topology", "name": "BdgEdge.make_three_point_arc", "sig": "static BdgEdge.make_three_point_arc(p1: Vector3, p2: Vector3, p3: Vector3) -> BdgEdge", "returns": "BdgEdge", "desc": "three point arc", "insert": "BdgEdge.make_three_point_arc(${0})"},
+		{"category": "Topology", "name": "BdgEdge.make_arc_radius", "sig": "static BdgEdge.make_arc_radius(p1: Vector3, p2: Vector3, radius: float, short_sagitta: bool = true) -> BdgEdge", "returns": "BdgEdge", "desc": "Method make_arc_radius in class BdgEdge.", "insert": "BdgEdge.make_arc_radius(${0})"},
+		{"category": "Topology", "name": "BdgEdge.make_tangent_arc", "sig": "static BdgEdge.make_tangent_arc(p1: Vector3, tangent_dir: Vector3, p2: Vector3) -> BdgEdge", "returns": "BdgEdge", "desc": "tangent arc tangent arc", "insert": "BdgEdge.make_tangent_arc(${0})"},
+		{"category": "Topology", "name": "BdgEdge.make_bezier", "sig": "static BdgEdge.make_bezier(control_points: Array, weights: Array = []) -> BdgEdge", "returns": "BdgEdge", "desc": "bezier curve through control points (optionally rational with weights)", "insert": "BdgEdge.make_bezier(${0})"},
+		{"category": "Topology", "name": "BdgEdge.make_spline", "sig": "static BdgEdge.make_spline(points: Array, tangents: Array = [], scale: bool = true) -> BdgEdge", "returns": "BdgEdge", "desc": "spline interpolating through points", "insert": "BdgEdge.make_spline(${0})"},
+		{"category": "Topology", "name": "BdgEdge.make_mid_way", "sig": "static BdgEdge.make_mid_way(first: BdgEdge, second: BdgEdge, middle: float = 0.5) -> BdgEdge", "returns": "BdgEdge", "desc": "line between two reference edges at a fractional distance (default center)", "insert": "BdgEdge.make_mid_way(${0})"},
+		{"category": "Topology", "name": "BdgEdge.make_double_tangent_arc", "sig": "static BdgEdge.make_double_tangent_arc(p1: Vector3, tangent1: Vector3, p2: Vector3, tangent2: Vector3) -> BdgEdge", "returns": "BdgEdge", "desc": "double tangent arc: smooth curve from p1 (along tangent1) to p2 (along tangent2)", "insert": "BdgEdge.make_double_tangent_arc(${0})"},
+		{"category": "Topology", "name": "BdgEdge.trim", "sig": "BdgEdge.trim(start_param: float, end_param: float) -> BdgEdge", "returns": "BdgEdge", "desc": "Trim this edge to parameter range (0..1)", "insert": "BdgEdge.trim(${0})"},
+		{"category": "Topology", "name": "BdgEdge.find_intersection", "sig": "BdgEdge.find_intersection(other: BdgEdge, tolerance: float = 1e-5) -> Array", "returns": "Array", "desc": "Find geometric intersections between this edge and another edge. Returns Array of Dictionaries: [{\"point\": Vector3, \"param_self\": float, \"param_other\": float, \"distance\": float}]", "insert": "BdgEdge.find_intersection(${0})"},
+		{"category": "Topology", "name": "BdgEdge.project_to_shape", "sig": "BdgEdge.project_to_shape(target: BdgShape, direction: Vector3 = Vector3.ZERO) -> Array", "returns": "Array", "desc": "Project this edge onto a target shape surface along a direction. Returns Array of BdgEdge projected onto the shape.", "insert": "BdgEdge.project_to_shape(${0})"},
+		{"category": "Topology", "name": "BdgEdge.find_intersection_points", "sig": "BdgEdge.find_intersection_points(other: BdgEdge, tolerance: float = 1e-5) -> Array[Vector3]", "returns": "Array[Vector3]", "desc": "Return list of 3D intersection points with another edge", "insert": "BdgEdge.find_intersection_points(${0})"},
+		{"category": "Topology", "name": "BdgEdge.find_tangent", "sig": "BdgEdge.find_tangent(param: float = 0.0) -> Vector3", "returns": "Vector3", "desc": "Tangent vector at parameter u (0..1)", "insert": "BdgEdge.find_tangent(${0})"},
+		{"category": "Topology", "name": "BdgEdge.param_at", "sig": "BdgEdge.param_at(distance_along: float) -> float", "returns": "float", "desc": "Curve parameter u (0..1) corresponding to distance along curve", "insert": "BdgEdge.param_at(${0})"},
+		{"category": "Topology", "name": "BdgEdge.param_at_point", "sig": "BdgEdge.param_at_point(point: Vector3) -> float", "returns": "float", "desc": "Curve parameter u (0..1) closest to 3D point", "insert": "BdgEdge.param_at_point(${0})"},
+		{"category": "Topology", "name": "BdgEdge.trim_to_length", "sig": "BdgEdge.trim_to_length(target_length: float) -> BdgEdge", "returns": "BdgEdge", "desc": "Trim edge to fixed length starting from u=0", "insert": "BdgEdge.trim_to_length(${0})"},
+		{"category": "Topology", "name": "BdgEdge.trim_to_other", "sig": "BdgEdge.trim_to_other(other: BdgEdge) -> BdgEdge", "returns": "BdgEdge", "desc": "Trim edge up to intersection with other edge", "insert": "BdgEdge.trim_to_other(${0})"},
+		{"category": "Topology", "name": "BdgEdge.trim_infinite", "sig": "BdgEdge.trim_infinite() -> BdgEdge", "returns": "BdgEdge", "desc": "Trim infinite line/curve to bounded region", "insert": "BdgEdge.trim_infinite()"},
+		{"category": "Topology", "name": "BdgEdge.is_infinite", "sig": "BdgEdge.is_infinite() -> bool", "returns": "bool", "desc": "Check if edge is mathematically infinite", "insert": "BdgEdge.is_infinite()"},
+		{"category": "Topology", "name": "BdgEdge.distribute_locations", "sig": "BdgEdge.distribute_locations(count: int, start: float = 0.0, stop: float = 1.0) -> Array[BdgLocation]", "returns": "Array[BdgLocation]", "desc": "Distribute locations uniformly along edge", "insert": "BdgEdge.distribute_locations(${0})"},
+		{"category": "Topology", "name": "BdgEdge.close", "sig": "BdgEdge.close() -> BdgEdge", "returns": "BdgEdge", "desc": "Close edge into wire/loop", "insert": "BdgEdge.close()"},
+		{"category": "Topology", "name": "BdgShell.make_shell", "sig": "static BdgShell.make_shell(faces: Array) -> BdgShell", "returns": "BdgShell", "desc": "create a shell from faces", "insert": "BdgShell.make_shell(${0})"},
+		{"category": "Topology", "name": "BdgShell.area", "sig": "BdgShell.area() -> float", "returns": "float", "desc": "Method area in class BdgShell.", "insert": "BdgShell.area()"},
+		{"category": "Topology", "name": "BdgShell.center", "sig": "BdgShell.center() -> Vector3", "returns": "Vector3", "desc": "Method center in class BdgShell.", "insert": "BdgShell.center()"},
+		{"category": "Topology", "name": "BdgShell.make_loft", "sig": "static BdgShell.make_loft(objs: Array, ruled: bool = false, as_solid: bool = false) -> BdgShape", "returns": "BdgShape", "desc": "Loft a shell (open surface) through the given section wires.", "insert": "BdgShell.make_loft(${0})"},
+		{"category": "Topology", "name": "BdgShell.location_at", "sig": "BdgShell.location_at(u: float = 0.5, v: float = 0.5) -> BdgLocation", "returns": "BdgLocation", "desc": "Location at UV coordinates of first face", "insert": "BdgShell.location_at(${0})"},
+		{"category": "Topology", "name": "BdgShell.extrude_amount", "sig": "BdgShell.extrude_amount(amount: float, dir: Vector3 = Vector3.ZERO) -> BdgShape", "returns": "BdgShape", "desc": "Extrude shell into solid", "insert": "BdgShell.extrude_amount(${0})"},
+		{"category": "Topology", "name": "BdgShell.extrude", "sig": "BdgShell.extrude(direction: Vector3) -> BdgShape", "returns": "BdgShape", "desc": "Method extrude in class BdgShell.", "insert": "BdgShell.extrude(${0})"},
+		{"category": "Topology", "name": "BdgShell.revolve", "sig": "BdgShell.revolve(angle_deg: float = 360.0, axis: BdgAxis = null) -> BdgShape", "returns": "BdgShape", "desc": "Revolve shell around axis into solid", "insert": "BdgShell.revolve(${0})"},
+		{"category": "Topology", "name": "BdgShell.sweep", "sig": "BdgShell.sweep(spine: BdgWire, aux_spines: Array = [], is_frenet: bool = false) -> BdgShape", "returns": "BdgShape", "desc": "Sweep shell along wire path into solid", "insert": "BdgShell.sweep(${0})"},
+		{"category": "Topology", "name": "BdgSolid.make_solid_from_shells", "sig": "static BdgSolid.make_solid_from_shells(shells: Array) -> BdgSolid", "returns": "BdgSolid", "desc": "create a solid from shells (e.g. via TopoDS_Builder make_solid + add)", "insert": "BdgSolid.make_solid_from_shells(${0})"},
+		{"category": "Topology", "name": "BdgSolid.center", "sig": "BdgSolid.center() -> Vector3", "returns": "Vector3", "desc": "center of mass", "insert": "BdgSolid.center()"},
+		{"category": "Topology", "name": "BdgSolid.make_box", "sig": "static BdgSolid.make_box(length: float, width: float, height: float, plane: BdgPlane = null) -> BdgSolid", "returns": "BdgSolid", "desc": "Box with corner at plane origin, extending positive dx, dy, dz", "insert": "BdgSolid.make_box(${0})"},
+		{"category": "Topology", "name": "BdgSolid.make_cylinder", "sig": "static BdgSolid.make_cylinder(radius: float, height: float, plane: BdgPlane = null, angle: float = 360.0) -> BdgSolid", "returns": "BdgSolid", "desc": "Cylinder with base center at plane origin", "insert": "BdgSolid.make_cylinder(${0})"},
+		{"category": "Topology", "name": "BdgSolid.fillet", "sig": "BdgSolid.fillet(radius: float, edge_list: Array = []) -> BdgSolid", "returns": "BdgSolid", "desc": "Fillet edges of this solid", "insert": "BdgSolid.fillet(${0})"},
+		{"category": "Topology", "name": "BdgSolid.chamfer", "sig": "BdgSolid.chamfer(length: float, length2: float, edge_list: Array, reference_face: BdgFace = null) -> BdgSolid", "returns": "BdgSolid", "desc": "Chamfer the given edges. length2 (optional) makes an asymmetric chamfer; reference_face identifies the side where length is measured.", "insert": "BdgSolid.chamfer(${0})"},
+		{"category": "Topology", "name": "BdgSolid.make_revolve", "sig": "static BdgSolid.make_revolve(section: BdgFace, angle: float, axis: BdgAxis) -> BdgSolid", "returns": "BdgSolid", "desc": "Revolve a face/wire section about axis by angle degrees into a solid.", "insert": "BdgSolid.make_revolve(${0})"},
+		{"category": "Topology", "name": "BdgSolid.hollow", "sig": "BdgSolid.hollow(faces_to_remove: Array, thickness: float, tolerance: float = 1e-4) -> BdgSolid", "returns": "BdgSolid", "desc": "Hollow out this solid (creating a shell with open face openings). faces_to_remove: Array of BdgFace openings. thickness: shell wall thickness (negative = inward).", "insert": "BdgSolid.hollow(${0})"},
+		{"category": "Topology", "name": "BdgSolid.draft", "sig": "BdgSolid.draft(faces: Array, angle_deg: float, neutral_plane: BdgPlane, pull_dir: Vector3 = Vector3.ZERO) -> BdgSolid", "returns": "BdgSolid", "desc": "Apply a draft taper angle (degrees) to selected faces of this solid.", "insert": "BdgSolid.draft(${0})"},
+		{"category": "Topology", "name": "BdgSolid.offset_solid", "sig": "BdgSolid.offset_solid(amount: float, openings: Array = []) -> BdgShape", "returns": "BdgShape", "desc": "Offset / shell solid with optional face openings", "insert": "BdgSolid.offset_solid(${0})"},
+		{"category": "Topology", "name": "BdgSolid.offset_shape", "sig": "BdgSolid.offset_shape(amount: float, openings: Array = []) -> BdgShape", "returns": "BdgShape", "desc": "Method offset_shape in class BdgSolid.", "insert": "BdgSolid.offset_shape(${0})"},
+		{"category": "Topology", "name": "BdgSolid.make_loft", "sig": "static BdgSolid.make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -> BdgShape", "returns": "BdgShape", "desc": "Loft a solid through the given sections (wires) and optional apex vertices. objs: Array of BdgWire and/or BdgVertex (vertices only at start/end). ruled: smooth (false) or stepped/linear (true).", "insert": "BdgSolid.make_loft(${0})"},
+		{"category": "Topology", "name": "BdgSolid.from_bounding_box", "sig": "static BdgSolid.from_bounding_box(bbox: BdgBoundBox) -> BdgSolid", "returns": "BdgSolid", "desc": "Construct a solid from a bounding box", "insert": "BdgSolid.from_bounding_box(${0})"},
+		{"category": "Topology", "name": "BdgSolid.extrude_amount", "sig": "BdgSolid.extrude_amount(amount: float, dir: Vector3 = Vector3.ZERO) -> BdgShape", "returns": "BdgShape", "desc": "Extrude solid / face into 3D solid by distance or direction", "insert": "BdgSolid.extrude_amount(${0})"},
+		{"category": "Topology", "name": "BdgSolid.extrude", "sig": "BdgSolid.extrude(direction: Vector3) -> BdgShape", "returns": "BdgShape", "desc": "Method extrude in class BdgSolid.", "insert": "BdgSolid.extrude(${0})"},
+		{"category": "Topology", "name": "BdgSolid.extrude_taper", "sig": "BdgSolid.extrude_taper(amount: float, taper_deg: float) -> BdgShape", "returns": "BdgShape", "desc": "Extrude with draft taper angle", "insert": "BdgSolid.extrude_taper(${0})"},
+		{"category": "Topology", "name": "BdgSolid.revolve", "sig": "BdgSolid.revolve(angle_deg: float = 360.0, axis: BdgAxis = null) -> BdgShape", "returns": "BdgShape", "desc": "Revolve solid around an axis", "insert": "BdgSolid.revolve(${0})"},
+		{"category": "Topology", "name": "BdgSolid.sweep", "sig": "BdgSolid.sweep(spine: BdgWire, aux_spines: Array = [], is_frenet: bool = false) -> BdgShape", "returns": "BdgShape", "desc": "Sweep solid along a path wire", "insert": "BdgSolid.sweep(${0})"},
+		{"category": "Topology", "name": "BdgSolid.thicken", "sig": "BdgSolid.thicken(amount: float) -> BdgSolid", "returns": "BdgSolid", "desc": "Thicken solid walls by amount", "insert": "BdgSolid.thicken(${0})"},
+		{"category": "Topology", "name": "BdgCompound.make_compound", "sig": "static BdgCompound.make_compound(shapes: Array) -> BdgCompound", "returns": "BdgCompound", "desc": "create a compound from shapes", "insert": "BdgCompound.make_compound(${0})"},
+		{"category": "Topology", "name": "BdgCompound.center", "sig": "BdgCompound.center() -> Vector3", "returns": "Vector3", "desc": "Method center in class BdgCompound.", "insert": "BdgCompound.center()"},
+		{"category": "Topology", "name": "BdgCompound.do_children_intersect", "sig": "BdgCompound.do_children_intersect() -> bool", "returns": "bool", "desc": "Check if children in compound intersect each other", "insert": "BdgCompound.do_children_intersect()"},
+		{"category": "Topology", "name": "BdgCompound.make_triad", "sig": "static BdgCompound.make_triad(axis_length: float = 10.0) -> BdgCompound", "returns": "BdgCompound", "desc": "Construct 3D RGB XYZ axis triad compound", "insert": "BdgCompound.make_triad(${0})"},
+		{"category": "Topology", "name": "BdgCompound.unwrap", "sig": "BdgCompound.unwrap() -> Array", "returns": "Array", "desc": "Extract flat array of child shapes", "insert": "BdgCompound.unwrap()"},
+		{"category": "Topology", "name": "BdgCompound.project_to_viewport", "sig": "BdgCompound.project_to_viewport(plane: BdgPlane = null) -> BdgCompound", "returns": "BdgCompound", "desc": "Project compound onto 2D viewport plane", "insert": "BdgCompound.project_to_viewport(${0})"},
+		{"category": "Topology", "name": "BdgShape.wrapped", "sig": "BdgShape.wrapped() -> OcgTopoDSShape", "returns": "OcgTopoDSShape", "desc": "Method wrapped in class BdgShape.", "insert": "BdgShape.wrapped()"},
+		{"category": "Topology", "name": "BdgShape.set_wrapped", "sig": "BdgShape.set_wrapped(shape: OcgTopoDSShape) -> void", "returns": "void", "desc": "Method set_wrapped in class BdgShape.", "insert": "BdgShape.set_wrapped(${0})"},
+		{"category": "Topology", "name": "BdgShape.is_null", "sig": "BdgShape.is_null() -> bool", "returns": "bool", "desc": "Method is_null in class BdgShape.", "insert": "BdgShape.is_null()"},
+		{"category": "Topology", "name": "BdgShape.shape_type", "sig": "BdgShape.shape_type() -> int", "returns": "int", "desc": "OCGTT TopAbs shape enum (BdgEnums.ShapeType values)", "insert": "BdgShape.shape_type()"},
+		{"category": "Topology", "name": "BdgShape.is_valid", "sig": "BdgShape.is_valid() -> bool", "returns": "bool", "desc": "Method is_valid in class BdgShape.", "insert": "BdgShape.is_valid()"},
+		{"category": "Topology", "name": "BdgShape.clean", "sig": "BdgShape.clean() -> BdgShape", "returns": "BdgShape", "desc": "Remove extraneous internal structure (unifies coplanar faces & collinear edges)", "insert": "BdgShape.clean()"},
+		{"category": "Topology", "name": "BdgShape.clone", "sig": "BdgShape.clone() -> BdgShape", "returns": "BdgShape", "desc": "Return a clone / copy of this shape", "insert": "BdgShape.clone()"},
+		{"category": "Topology", "name": "BdgShape.is_same", "sig": "BdgShape.is_same(other: BdgShape) -> bool", "returns": "bool", "desc": "Method is_same in class BdgShape.", "insert": "BdgShape.is_same(${0})"},
+		{"category": "Topology", "name": "BdgShape.is_equal", "sig": "BdgShape.is_equal(other: BdgShape) -> bool", "returns": "bool", "desc": "Method is_equal in class BdgShape.", "insert": "BdgShape.is_equal(${0})"},
+		{"category": "Topology", "name": "BdgShape.reversed", "sig": "BdgShape.reversed() -> BdgShape", "returns": "BdgShape", "desc": "Reverse the orientation of the shape (returns a new BdgShape)", "insert": "BdgShape.reversed()"},
+		{"category": "Topology", "name": "BdgShape.area", "sig": "BdgShape.area() -> float", "returns": "float", "desc": "Method area in class BdgShape.", "insert": "BdgShape.area()"},
+		{"category": "Topology", "name": "BdgShape.volume", "sig": "BdgShape.volume() -> float", "returns": "float", "desc": "Method volume in class BdgShape.", "insert": "BdgShape.volume()"},
+		{"category": "Topology", "name": "BdgShape.compute_volume", "sig": "BdgShape.compute_volume() -> float", "returns": "float", "desc": "Method compute_volume in class BdgShape.", "insert": "BdgShape.compute_volume()"},
+		{"category": "Topology", "name": "BdgShape.center_of_mass", "sig": "BdgShape.center_of_mass() -> Vector3", "returns": "Vector3", "desc": "Method center_of_mass in class BdgShape.", "insert": "BdgShape.center_of_mass()"},
+		{"category": "Topology", "name": "BdgShape.center", "sig": "BdgShape.center() -> Vector3", "returns": "Vector3", "desc": "center of the shape (bounding box center by default; subclasses override)", "insert": "BdgShape.center()"},
+		{"category": "Topology", "name": "BdgShape.geom_type", "sig": "BdgShape.geom_type() -> int", "returns": "int", "desc": "geometry type: BdgEnums.GeomType", "insert": "BdgShape.geom_type()"},
+		{"category": "Topology", "name": "BdgShape.location", "sig": "BdgShape.location() -> BdgLocation", "returns": "BdgLocation", "desc": "Method location in class BdgShape.", "insert": "BdgShape.location()"},
+		{"category": "Topology", "name": "BdgShape.set_location", "sig": "BdgShape.set_location(loc: BdgLocation) -> void", "returns": "void", "desc": "Method set_location in class BdgShape.", "insert": "BdgShape.set_location(${0})"},
+		{"category": "Topology", "name": "BdgShape.position", "sig": "BdgShape.position() -> Vector3", "returns": "Vector3", "desc": "Method position in class BdgShape.", "insert": "BdgShape.position()"},
+		{"category": "Topology", "name": "BdgShape.orientation", "sig": "BdgShape.orientation() -> Quaternion", "returns": "Quaternion", "desc": "Method orientation in class BdgShape.", "insert": "BdgShape.orientation()"},
+		{"category": "Topology", "name": "BdgShape.located", "sig": "BdgShape.located(loc: BdgLocation) -> BdgShape", "returns": "BdgShape", "desc": "Copy of self at the given absolute location", "insert": "BdgShape.located(${0})"},
+		{"category": "Topology", "name": "BdgShape.locate", "sig": "BdgShape.locate(loc: BdgLocation) -> BdgShape", "returns": "BdgShape", "desc": "Apply location in-place", "insert": "BdgShape.locate(${0})"},
+		{"category": "Topology", "name": "BdgShape.move", "sig": "BdgShape.move(loc: BdgLocation) -> BdgShape", "returns": "BdgShape", "desc": "Move (relative) in place", "insert": "BdgShape.move(${0})"},
+		{"category": "Topology", "name": "BdgShape.moved", "sig": "BdgShape.moved(loc: BdgLocation) -> BdgShape", "returns": "BdgShape", "desc": "Move (relative) returning copy", "insert": "BdgShape.moved(${0})"},
+		{"category": "Topology", "name": "BdgShape.translate", "sig": "BdgShape.translate(v: Vector3) -> BdgShape", "returns": "BdgShape", "desc": "Method translate in class BdgShape.", "insert": "BdgShape.translate(${0})"},
+		{"category": "Topology", "name": "BdgShape.rotated_about", "sig": "BdgShape.rotated_about(axis: BdgAxis, angle_deg: float) -> BdgShape", "returns": "BdgShape", "desc": "Method rotated_about in class BdgShape.", "insert": "BdgShape.rotated_about(${0})"},
+		{"category": "Topology", "name": "BdgShape.rotate", "sig": "BdgShape.rotate(axis: BdgAxis, angle_deg: float) -> BdgShape", "returns": "BdgShape", "desc": "Alias for rotated_about", "insert": "BdgShape.rotate(${0})"},
+		{"category": "Topology", "name": "BdgShape.scale", "sig": "BdgShape.scale(factor: float, center: Vector3 = Vector3.ZERO) -> BdgShape", "returns": "BdgShape", "desc": "Method scale in class BdgShape.", "insert": "BdgShape.scale(${0})"},
+		{"category": "Topology", "name": "BdgShape.scaled", "sig": "BdgShape.scaled(factor: Vector3, center: Vector3 = Vector3.ZERO) -> BdgShape", "returns": "BdgShape", "desc": "Non-uniform scale about a center, returning a new copy of the shape. build123d's `scale(by=(sx, sy, sz), mode=...)` uses a general (non-uniform) transform, which a gp_Trsf cannot represent, so this uses BRepBuilderAPI_GTransform.", "insert": "BdgShape.scaled(${0})"},
+		{"category": "Topology", "name": "BdgShape.transform_geometry", "sig": "BdgShape.transform_geometry(m: BdgMatrix) -> BdgShape", "returns": "BdgShape", "desc": "transform geometry (in place)", "insert": "BdgShape.transform_geometry(${0})"},
+		{"category": "Topology", "name": "BdgShape.transform_shape", "sig": "BdgShape.transform_shape(m: BdgMatrix) -> BdgShape", "returns": "BdgShape", "desc": "transform shape returning a copy", "insert": "BdgShape.transform_shape(${0})"},
+		{"category": "Topology", "name": "BdgShape.mirrored", "sig": "BdgShape.mirrored(plane: BdgPlane) -> BdgShape", "returns": "BdgShape", "desc": "Method mirrored in class BdgShape.", "insert": "BdgShape.mirrored(${0})"},
+		{"category": "Topology", "name": "BdgShape.bounding_box", "sig": "BdgShape.bounding_box(tolerance: float = -1.0) -> BdgBoundBox", "returns": "BdgBoundBox", "desc": "Method bounding_box in class BdgShape.", "insert": "BdgShape.bounding_box(${0})"},
+		{"category": "Topology", "name": "BdgShape.extrude", "sig": "BdgShape.extrude(direction: Vector3) -> BdgShape", "returns": "BdgShape", "desc": "Extrude this shape along direction. Vertices->Edges, Edges->Faces, Wires->Shells, Faces->Solids, Shells->Compounds.", "insert": "BdgShape.extrude(${0})"},
+		{"category": "Topology", "name": "BdgShape.tessellate", "sig": "BdgShape.tessellate(tolerance: float = 0.1, angular_tolerance: float = 11.459) -> Array", "returns": "Array", "desc": "Tessellate this shape into Godot-native vertex/triangle arrays. Returns [vertices: PackedVector3Array, triangles: PackedInt32Array]. tolerance (linear) and angular_tolerance (degrees) control mesh density. Build123d interactive display defaults: linear=0.1, angular=0.2 rad (≈11.46°)", "insert": "BdgShape.tessellate(${0})"},
+		{"category": "Topology", "name": "BdgShape.tessellate_with_uvs", "sig": "BdgShape.tessellate_with_uvs(tolerance: float = 0.1, angular_tolerance: float = 11.459, texture_scale: float = 0.05) -> Array", "returns": "Array", "desc": "Tessellate this shape into Godot-native vertices, triangles, and OpenCASCADE UVs. Returns [vertices: PackedVector3Array, triangles: PackedInt32Array, uvs: PackedVector2Array]. Build123d interactive display defaults: linear=0.1, angular=0.2 rad (≈11.46°)", "insert": "BdgShape.tessellate_with_uvs(${0})"},
+		{"category": "Topology", "name": "BdgShape.fuse", "sig": "BdgShape.fuse(other: BdgShape) -> BdgShape", "returns": "BdgShape", "desc": "fuse all shapes into one", "insert": "BdgShape.fuse(${0})"},
+		{"category": "Topology", "name": "BdgShape.cut", "sig": "BdgShape.cut(other: BdgShape) -> BdgShape", "returns": "BdgShape", "desc": "Method cut in class BdgShape.", "insert": "BdgShape.cut(${0})"},
+		{"category": "Topology", "name": "BdgShape.intersect", "sig": "BdgShape.intersect(other: BdgShape) -> BdgShape", "returns": "BdgShape", "desc": "Method intersect in class BdgShape.", "insert": "BdgShape.intersect(${0})"},
+		{"category": "Topology", "name": "BdgShape.fillet", "sig": "BdgShape.fillet(radius: float, edge_list: Array = []) -> BdgShape", "returns": "BdgShape", "desc": "Fillet edges of this shape with given radius", "insert": "BdgShape.fillet(${0})"},
+		{"category": "Topology", "name": "BdgShape.make_pipe_shell", "sig": "static BdgShape.make_pipe_shell(path_wire: BdgWire, sections: Array, as_solid: bool = true) -> BdgShape", "returns": "BdgShape", "desc": "Multisection sweep (pipe shell) along a path wire through section faces or wires.", "insert": "BdgShape.make_pipe_shell(${0})"},
+		{"category": "Topology", "name": "BdgShape.fuse_all", "sig": "BdgShape.fuse_all(tools: Array) -> BdgShape", "returns": "BdgShape", "desc": "fuse with multiple tools at once", "insert": "BdgShape.fuse_all(${0})"},
+		{"category": "Topology", "name": "BdgShape.cut_all", "sig": "BdgShape.cut_all(tools: Array) -> BdgShape", "returns": "BdgShape", "desc": "cut with multiple tools at once", "insert": "BdgShape.cut_all(${0})"},
+		{"category": "Topology", "name": "BdgShape.intersect_all", "sig": "BdgShape.intersect_all(tools: Array) -> BdgShape", "returns": "BdgShape", "desc": "intersect with multiple tools at once", "insert": "BdgShape.intersect_all(${0})"},
+		{"category": "Topology", "name": "BdgShape.revolve", "sig": "BdgShape.revolve(angle_deg: float, axis: BdgAxis = BdgAxis.Z) -> BdgShape", "returns": "BdgShape", "desc": "Revolve this shape around an axis by angle_deg (360 = full). Returns a BdgShape.", "insert": "BdgShape.revolve(${0})"},
+		{"category": "Topology", "name": "BdgShape.sweep", "sig": "BdgShape.sweep(spine: BdgWire, aux_spines: Array = [], is_frenet: bool = false) -> BdgShape", "returns": "BdgShape", "desc": "Sweep this profile shape along a spine wire. Returns the swept shape.", "insert": "BdgShape.sweep(${0})"},
+		{"category": "Topology", "name": "BdgShape.thicken", "sig": "BdgShape.thicken(amount: float) -> BdgShape", "returns": "BdgShape", "desc": "Thicken a face (or shell) outward by amount (negative = inward). Returns a BdgShape.", "insert": "BdgShape.thicken(${0})"},
+		{"category": "Topology", "name": "BdgShape.section", "sig": "BdgShape.section(plane: BdgPlane = null) -> Array", "returns": "Array", "desc": "World coord section of this shape with a plane. Returns edges (array of BdgEdge).", "insert": "BdgShape.section(${0})"},
+		{"category": "Topology", "name": "BdgShape.split_by_perimeter", "sig": "BdgShape.split_by_perimeter(perimeter: Variant, keep: int = BdgEnums.Keep.INSIDE) -> Variant", "returns": "Variant", "desc": "Split this shape's faces by a closed perimeter wire or edge. keep: BdgEnums.Keep.INSIDE/OUTSIDE/BOTH. Returns the inside/outside part as a BdgShape (or Array of BdgShape), or for BOTH an array [inside, outside].", "insert": "BdgShape.split_by_perimeter(${0})"},
+		{"category": "Topology", "name": "BdgShape.make_loft", "sig": "static BdgShape.make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -> BdgShape", "returns": "BdgShape", "desc": "Loft a shape (Solid if as_solid, else Shell) through wires/vertices sections. objs: Array of BdgWire and/or BdgVertex (vertices only at the ends).", "insert": "BdgShape.make_loft(${0})"},
+		{"category": "Topology", "name": "BdgShape.entities", "sig": "BdgShape.entities(topo_type: int) -> Array[OcgTopoDSShape]", "returns": "Array[OcgTopoDSShape]", "desc": "Method entities in class BdgShape.", "insert": "BdgShape.entities(${0})"},
+		{"category": "Topology", "name": "BdgShape.vertices", "sig": "BdgShape.vertices() -> Array", "returns": "Array", "desc": "Method vertices in class BdgShape.", "insert": "BdgShape.vertices()"},
+		{"category": "Topology", "name": "BdgShape.edges", "sig": "BdgShape.edges() -> Array", "returns": "Array", "desc": "Method edges in class BdgShape.", "insert": "BdgShape.edges()"},
+		{"category": "Topology", "name": "BdgShape.wires", "sig": "BdgShape.wires() -> Array", "returns": "Array", "desc": "Method wires in class BdgShape.", "insert": "BdgShape.wires()"},
+		{"category": "Topology", "name": "BdgShape.faces", "sig": "BdgShape.faces() -> Array", "returns": "Array", "desc": "Method faces in class BdgShape.", "insert": "BdgShape.faces()"},
+		{"category": "Topology", "name": "BdgShape.shells", "sig": "BdgShape.shells() -> Array", "returns": "Array", "desc": "Method shells in class BdgShape.", "insert": "BdgShape.shells()"},
+		{"category": "Topology", "name": "BdgShape.solids", "sig": "BdgShape.solids() -> Array", "returns": "Array", "desc": "Method solids in class BdgShape.", "insert": "BdgShape.solids()"},
+		{"category": "Topology", "name": "BdgShape.compounds", "sig": "BdgShape.compounds() -> Array", "returns": "Array", "desc": "Method compounds in class BdgShape.", "insert": "BdgShape.compounds()"},
+		{"category": "Topology", "name": "BdgShape.vertex", "sig": "BdgShape.vertex() -> BdgVertex", "returns": "BdgVertex", "desc": "Method vertex in class BdgShape.", "insert": "BdgShape.vertex()"},
+		{"category": "Topology", "name": "BdgShape.edge", "sig": "BdgShape.edge() -> BdgEdge", "returns": "BdgEdge", "desc": "Method edge in class BdgShape.", "insert": "BdgShape.edge()"},
+		{"category": "Topology", "name": "BdgShape.wire", "sig": "BdgShape.wire() -> BdgWire", "returns": "BdgWire", "desc": "Method wire in class BdgShape.", "insert": "BdgShape.wire()"},
+		{"category": "Topology", "name": "BdgShape.face", "sig": "BdgShape.face() -> BdgFace", "returns": "BdgFace", "desc": "Method face in class BdgShape.", "insert": "BdgShape.face()"},
+		{"category": "Topology", "name": "BdgShape.shell", "sig": "BdgShape.shell() -> BdgShell", "returns": "BdgShell", "desc": "Method shell in class BdgShape.", "insert": "BdgShape.shell()"},
+		{"category": "Topology", "name": "BdgShape.solid", "sig": "BdgShape.solid() -> BdgSolid", "returns": "BdgSolid", "desc": "Method solid in class BdgShape.", "insert": "BdgShape.solid()"},
+		{"category": "Topology", "name": "BdgShape.compound", "sig": "BdgShape.compound() -> BdgCompound", "returns": "BdgCompound", "desc": "Method compound in class BdgShape.", "insert": "BdgShape.compound()"},
+		{"category": "Topology", "name": "BdgShape.get_top_level_shapes", "sig": "BdgShape.get_top_level_shapes() -> Array", "returns": "Array", "desc": "get_top_level_shapes - first level non-compound children", "insert": "BdgShape.get_top_level_shapes()"},
+		{"category": "Topology", "name": "BdgShape.cast", "sig": "static BdgShape.cast(obj: OcgTopoDSShape) -> BdgShape", "returns": "BdgShape", "desc": "Return the right Bdg* wrapper class given an OCCT shape", "insert": "BdgShape.cast(${0})"},
+		{"category": "Topology", "name": "BdgShape.make_compound_of", "sig": "static BdgShape.make_compound_of(shapes: Array) -> BdgShape", "returns": "BdgShape", "desc": "Build a compound from an array of BdgShape", "insert": "BdgShape.make_compound_of(${0})"},
+		{"category": "Topology", "name": "BdgShape.distance_to", "sig": "BdgShape.distance_to(other: BdgShape) -> float", "returns": "float", "desc": "Minimum distance between this shape and another shape", "insert": "BdgShape.distance_to(${0})"},
+		{"category": "Topology", "name": "BdgShape.distance_to_with_closest_points", "sig": "BdgShape.distance_to_with_closest_points(other: BdgShape) -> Array", "returns": "Array", "desc": "Minimum distance along with the closest points on both shapes [dist, p1, p2]", "insert": "BdgShape.distance_to_with_closest_points(${0})"},
+		{"category": "Topology", "name": "BdgShape.closest_points", "sig": "BdgShape.closest_points(other: BdgShape) -> Array", "returns": "Array", "desc": "Closest points between this shape and another shape [p1, p2]", "insert": "BdgShape.closest_points(${0})"},
+		{"category": "Topology", "name": "BdgShape.compute_mass", "sig": "BdgShape.compute_mass() -> float", "returns": "float", "desc": "Alias for mass computation (length, area, or volume based on shape dimension)", "insert": "BdgShape.compute_mass()"},
+		{"category": "Topology", "name": "BdgShape.matrix_of_inertia", "sig": "BdgShape.matrix_of_inertia() -> Array", "returns": "Array", "desc": "3x3 inertia matrix of shape", "insert": "BdgShape.matrix_of_inertia()"},
+		{"category": "Topology", "name": "BdgShape.principal_properties", "sig": "BdgShape.principal_properties() -> Dictionary", "returns": "Dictionary", "desc": "Principal moments of inertia and principal axes", "insert": "BdgShape.principal_properties()"},
+		{"category": "Topology", "name": "BdgShape.radius_of_gyration", "sig": "BdgShape.radius_of_gyration() -> Vector3", "returns": "Vector3", "desc": "Radius of gyration", "insert": "BdgShape.radius_of_gyration()"},
+		{"category": "Topology", "name": "BdgShape.static_moments", "sig": "BdgShape.static_moments() -> Vector3", "returns": "Vector3", "desc": "Static moments", "insert": "BdgShape.static_moments()"},
+		{"category": "Topology", "name": "BdgShape.is_manifold", "sig": "BdgShape.is_manifold() -> bool", "returns": "bool", "desc": "Check if shape is a closed, water-tight 2-manifold", "insert": "BdgShape.is_manifold()"},
+		{"category": "Topology", "name": "BdgShape.faces_intersected_by_axis", "sig": "BdgShape.faces_intersected_by_axis(axis: BdgAxis) -> Array", "returns": "Array", "desc": "Find faces intersected by a 3D ray/axis", "insert": "BdgShape.faces_intersected_by_axis(${0})"},
+		{"category": "Topology", "name": "BdgShape.copy_attributes_to", "sig": "BdgShape.copy_attributes_to(target: BdgShape, exceptions: Array = []) -> void", "returns": "void", "desc": "Copy attributes (label, color, for_construction) to target shape", "insert": "BdgShape.copy_attributes_to(${0})"},
+		{"category": "Topology", "name": "BdgShape.global_location", "sig": "BdgShape.global_location() -> BdgLocation", "returns": "BdgLocation", "desc": "Return global location of shape", "insert": "BdgShape.global_location()"},
+		{"category": "Topology", "name": "BdgShape.relocate", "sig": "BdgShape.relocate(loc: BdgLocation) -> BdgShape", "returns": "BdgShape", "desc": "Relocate shape to target location returning a new BdgShape", "insert": "BdgShape.relocate(${0})"},
+		{"category": "Topology", "name": "BdgShape.oriented_bounding_box", "sig": "BdgShape.oriented_bounding_box() -> BdgBoundBox", "returns": "BdgBoundBox", "desc": "Oriented bounding box (OBB)", "insert": "BdgShape.oriented_bounding_box()"},
+		{"category": "Topology", "name": "BdgShape.show_topology", "sig": "BdgShape.show_topology() -> String", "returns": "String", "desc": "Topology tree representation as string", "insert": "BdgShape.show_topology()"},
+		{"category": "Topology", "name": "BdgShape.to_splines", "sig": "BdgShape.to_splines() -> BdgShape", "returns": "BdgShape", "desc": "Convert curves/surfaces to B-splines", "insert": "BdgShape.to_splines()"},
+		{"category": "Topology", "name": "BdgShape.make_composite", "sig": "BdgShape.make_composite() -> BdgCompound", "returns": "BdgCompound", "desc": "Wrap shape into a BdgCompound", "insert": "BdgShape.make_composite()"},
+		{"category": "Topology", "name": "BdgShape.get_shape_list", "sig": "BdgShape.get_shape_list() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Return a BdgShapeList of sub-shapes", "insert": "BdgShape.get_shape_list()"},
+		{"category": "Topology", "name": "BdgShape.get_single_shape", "sig": "BdgShape.get_single_shape() -> BdgShape", "returns": "BdgShape", "desc": "Return single shape", "insert": "BdgShape.get_single_shape()"},
+		{"category": "Topology", "name": "BdgShape.to_array_mesh", "sig": "BdgShape.to_array_mesh(deflection: float = 0.1) -> ArrayMesh", "returns": "ArrayMesh", "desc": "Convert OCCT tessellated shape into a Godot native ArrayMesh", "insert": "BdgShape.to_array_mesh(${0})"},
+		{"category": "Topology", "name": "BdgShape.to_node3d", "sig": "BdgShape.to_node3d(deflection: float = 0.1) -> MeshInstance3D", "returns": "MeshInstance3D", "desc": "Convert shape into a Godot MeshInstance3D node", "insert": "BdgShape.to_node3d(${0})"},
+		{"category": "Topology", "name": "BdgShape.BdgLocation_to_matrix", "sig": "static BdgShape.BdgLocation_to_matrix(loc: BdgLocation) -> BdgMatrix", "returns": "BdgMatrix", "desc": "Method BdgLocation_to_matrix in class BdgShape.", "insert": "BdgShape.BdgLocation_to_matrix(${0})"},
+		{"category": "Topology", "name": "BdgShape.duplicate_shape", "sig": "static BdgShape.duplicate_shape(s: BdgShape) -> BdgShape", "returns": "BdgShape", "desc": "Duplicate a BdgShape (deep copy of wrapped OCCT shape)", "insert": "BdgShape.duplicate_shape(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_wire", "sig": "static BdgWire.make_wire(edges: Array) -> BdgWire", "returns": "BdgWire", "desc": "Create a wire from a list of edges/wires (must share endpoints)", "insert": "BdgWire.make_wire(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_polygon", "sig": "static BdgWire.make_polygon(points: Array, close: bool = true) -> BdgWire", "returns": "BdgWire", "desc": "Create a wire from a sequence of points as straight segments", "insert": "BdgWire.make_polygon(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_circle", "sig": "static BdgWire.make_circle(radius: float, plane: BdgPlane = null) -> BdgWire", "returns": "BdgWire", "desc": "Create a circle wire in a plane", "insert": "BdgWire.make_circle(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_rect", "sig": "static BdgWire.make_rect(width: float, height: float, plane: BdgPlane = null) -> BdgWire", "returns": "BdgWire", "desc": "Create a rectangular wire", "insert": "BdgWire.make_rect(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_ellipse", "sig": "static BdgWire.make_ellipse(x_radius: float, y_radius: float, plane: BdgPlane = null) -> BdgWire", "returns": "BdgWire", "desc": "Create an elliptical wire in a plane", "insert": "BdgWire.make_ellipse(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_spline", "sig": "static BdgWire.make_spline(points: Array, periodic: bool = false) -> BdgWire", "returns": "BdgWire", "desc": "Create a spline wire through points", "insert": "BdgWire.make_spline(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_bezier", "sig": "static BdgWire.make_bezier(control_points: Array) -> BdgWire", "returns": "BdgWire", "desc": "Create a bezier wire through control points", "insert": "BdgWire.make_bezier(${0})"},
+		{"category": "Topology", "name": "BdgWire.make_bspline", "sig": "static BdgWire.make_bspline(control_points: Array, knots: Array, degree: int = 3, periodic: bool = false) -> BdgWire", "returns": "BdgWire", "desc": "Create a bspline wire from control points and knot data (see BdgEdge.make_bspline)", "insert": "BdgWire.make_bspline(${0})"},
+		{"category": "Topology", "name": "BdgWire.combine", "sig": "static BdgWire.combine(edges: Array) -> Array", "returns": "Array", "desc": "Combine a list of edges into wires (connected chains). Returns an array of BdgWire.", "insert": "BdgWire.combine(${0})"},
+		{"category": "Topology", "name": "BdgWire.fillet_2d", "sig": "BdgWire.fillet_2d(radius: float, vertices: Array = [], plane: BdgPlane = null) -> BdgWire", "returns": "BdgWire", "desc": "2D fillet of planar wire corners (straight-line edges only). vertices: Array of Vector3 (or BdgVertex) corners to fillet; empty = all corners. Returns a new BdgWire (or self if nothing to do / on error).", "insert": "BdgWire.fillet_2d(${0})"},
+		{"category": "Topology", "name": "BdgWire.chamfer_2d", "sig": "BdgWire.chamfer_2d(length: float, length2: float = 0.0, vertices: Array = [], plane: BdgPlane = null) -> BdgWire", "returns": "BdgWire", "desc": "2D chamfer of planar wire corners (straight-line edges only). length: distance cut back from the corner. length2: optional asymmetric distance.", "insert": "BdgWire.chamfer_2d(${0})"},
+		{"category": "Topology", "name": "BdgWire.close", "sig": "BdgWire.close() -> BdgWire", "returns": "BdgWire", "desc": "Close this wire by adding an edge from its end point to its start point if open.", "insert": "BdgWire.close()"},
+		{"category": "Topology", "name": "BdgWire.order_edges", "sig": "BdgWire.order_edges() -> Array", "returns": "Array", "desc": "Return edges ordered end-to-end sequentially.", "insert": "BdgWire.order_edges()"},
+		{"category": "Topology", "name": "BdgWire.is_manifold", "sig": "BdgWire.is_manifold() -> bool", "returns": "bool", "desc": "Is this wire closed (a loop)?", "insert": "BdgWire.is_manifold()"},
+		{"category": "Topology", "name": "BdgWire.stitch", "sig": "BdgWire.stitch() -> BdgWire", "returns": "BdgWire", "desc": "Stitch degenerate wire edges into a clean wire", "insert": "BdgWire.stitch()"},
+		{"category": "Topology", "name": "BdgWire.fix_degenerate_edges", "sig": "BdgWire.fix_degenerate_edges() -> BdgWire", "returns": "BdgWire", "desc": "Remove degenerate 0-length edges from wire", "insert": "BdgWire.fix_degenerate_edges()"},
+		{"category": "Topology", "name": "BdgWire.make_convex_hull", "sig": "static BdgWire.make_convex_hull(points: Array, plane: BdgPlane = null) -> BdgWire", "returns": "BdgWire", "desc": "Compute 2D convex hull wire of planar vertices", "insert": "BdgWire.make_convex_hull(${0})"},
+		{"category": "Topology", "name": "BdgWire.order_chamfer_edges", "sig": "BdgWire.order_chamfer_edges() -> Array", "returns": "Array", "desc": "Order edges for chamfering", "insert": "BdgWire.order_chamfer_edges()"},
+		{"category": "Topology", "name": "BdgWire.trim", "sig": "BdgWire.trim(start_param: float, end_param: float) -> BdgWire", "returns": "BdgWire", "desc": "Trim wire to parameter sub-range (0..1)", "insert": "BdgWire.trim(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.size", "sig": "BdgShapeList.size() -> int", "returns": "int", "desc": "Method size in class BdgShapeList.", "insert": "BdgShapeList.size()"},
+		{"category": "Topology", "name": "BdgShapeList.is_empty", "sig": "BdgShapeList.is_empty() -> bool", "returns": "bool", "desc": "Method is_empty in class BdgShapeList.", "insert": "BdgShapeList.is_empty()"},
+		{"category": "Topology", "name": "BdgShapeList.at", "sig": "BdgShapeList.at(i: int) -> BdgShape", "returns": "BdgShape", "desc": "Method at in class BdgShapeList.", "insert": "BdgShapeList.at(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.get_all", "sig": "BdgShapeList.get_all() -> Array", "returns": "Array", "desc": "Method get_all in class BdgShapeList.", "insert": "BdgShapeList.get_all()"},
+		{"category": "Topology", "name": "BdgShapeList.append", "sig": "BdgShapeList.append(shape: BdgShape) -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method append in class BdgShapeList.", "insert": "BdgShapeList.append(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.extend", "sig": "BdgShapeList.extend(other: BdgShapeList) -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method extend in class BdgShapeList.", "insert": "BdgShapeList.extend(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.slice", "sig": "BdgShapeList.slice(begin: int, end: int) -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method slice in class BdgShapeList.", "insert": "BdgShapeList.slice(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.first", "sig": "BdgShapeList.first() -> BdgShape", "returns": "BdgShape", "desc": "Method first in class BdgShapeList.", "insert": "BdgShapeList.first()"},
+		{"category": "Topology", "name": "BdgShapeList.last", "sig": "BdgShapeList.last() -> BdgShape", "returns": "BdgShape", "desc": "Method last in class BdgShapeList.", "insert": "BdgShapeList.last()"},
+		{"category": "Topology", "name": "BdgShapeList.center", "sig": "BdgShapeList.center() -> Vector3", "returns": "Vector3", "desc": "average of the centers of all objects", "insert": "BdgShapeList.center()"},
+		{"category": "Topology", "name": "BdgShapeList.vertices", "sig": "BdgShapeList.vertices() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method vertices in class BdgShapeList.", "insert": "BdgShapeList.vertices()"},
+		{"category": "Topology", "name": "BdgShapeList.edges", "sig": "BdgShapeList.edges() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method edges in class BdgShapeList.", "insert": "BdgShapeList.edges()"},
+		{"category": "Topology", "name": "BdgShapeList.wires", "sig": "BdgShapeList.wires() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method wires in class BdgShapeList.", "insert": "BdgShapeList.wires()"},
+		{"category": "Topology", "name": "BdgShapeList.faces", "sig": "BdgShapeList.faces() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method faces in class BdgShapeList.", "insert": "BdgShapeList.faces()"},
+		{"category": "Topology", "name": "BdgShapeList.shells", "sig": "BdgShapeList.shells() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method shells in class BdgShapeList.", "insert": "BdgShapeList.shells()"},
+		{"category": "Topology", "name": "BdgShapeList.solids", "sig": "BdgShapeList.solids() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method solids in class BdgShapeList.", "insert": "BdgShapeList.solids()"},
+		{"category": "Topology", "name": "BdgShapeList.compounds", "sig": "BdgShapeList.compounds() -> BdgShapeList", "returns": "BdgShapeList", "desc": "Method compounds in class BdgShapeList.", "insert": "BdgShapeList.compounds()"},
+		{"category": "Topology", "name": "BdgShapeList.vertex", "sig": "BdgShapeList.vertex() -> BdgShape", "returns": "BdgShape", "desc": "return the single vertex/edge/... or raise an error if not exactly one", "insert": "BdgShapeList.vertex()"},
+		{"category": "Topology", "name": "BdgShapeList.edge", "sig": "BdgShapeList.edge() -> BdgShape", "returns": "BdgShape", "desc": "Method edge in class BdgShapeList.", "insert": "BdgShapeList.edge()"},
+		{"category": "Topology", "name": "BdgShapeList.wire", "sig": "BdgShapeList.wire() -> BdgShape", "returns": "BdgShape", "desc": "Method wire in class BdgShapeList.", "insert": "BdgShapeList.wire()"},
+		{"category": "Topology", "name": "BdgShapeList.face", "sig": "BdgShapeList.face() -> BdgShape", "returns": "BdgShape", "desc": "Method face in class BdgShapeList.", "insert": "BdgShapeList.face()"},
+		{"category": "Topology", "name": "BdgShapeList.shell", "sig": "BdgShapeList.shell() -> BdgShape", "returns": "BdgShape", "desc": "Method shell in class BdgShapeList.", "insert": "BdgShapeList.shell()"},
+		{"category": "Topology", "name": "BdgShapeList.solid", "sig": "BdgShapeList.solid() -> BdgShape", "returns": "BdgShape", "desc": "Method solid in class BdgShapeList.", "insert": "BdgShapeList.solid()"},
+		{"category": "Topology", "name": "BdgShapeList.compound", "sig": "BdgShapeList.compound() -> BdgShape", "returns": "BdgShape", "desc": "Method compound in class BdgShapeList.", "insert": "BdgShapeList.compound()"},
+		{"category": "Topology", "name": "BdgShapeList.expand", "sig": "BdgShapeList.expand() -> BdgShapeList", "returns": "BdgShapeList", "desc": "dissolve compounds to children, wires to edges, shells to faces; drop nulls", "insert": "BdgShapeList.expand()"},
+		{"category": "Topology", "name": "BdgShapeList.build_compound", "sig": "BdgShapeList.build_compound() -> BdgShape", "returns": "BdgShape", "desc": "build a compound of every shape in this list", "insert": "BdgShapeList.build_compound()"},
+		{"category": "Topology", "name": "BdgShapeList.filter_by", "sig": "BdgShapeList.filter_by(filter_by, reverse: bool = false, tolerance: float = 1e-5) -> BdgShapeList", "returns": "BdgShapeList", "desc": "filter by Callable(shape)->bool, BdgAxis, BdgPlane, or BdgEnums.GeomType. reverse=true inverts the predicate.", "insert": "BdgShapeList.filter_by(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.filter_by_position", "sig": "BdgShapeList.filter_by_position(axis: BdgAxis, minimum: float, maximum: float, include_min: bool = true, include_max: bool = true) -> BdgShapeList", "returns": "BdgShapeList", "desc": "filter and sort by the position of centers along an axis", "insert": "BdgShapeList.filter_by_position(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.sort_by", "sig": "BdgShapeList.sort_by(sort_by, reverse: bool = false) -> BdgShapeList", "returns": "BdgShapeList", "desc": "sort by Callable(shape)->float, BdgAxis, or BdgEnums.SortBy", "insert": "BdgShapeList.sort_by(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.group_by", "sig": "BdgShapeList.group_by(group_by, reverse: bool = false, tol_digits: int = 6) -> Array", "returns": "Array", "desc": "group by Callable, BdgAxis, or BdgEnums.SortBy; returns Array of BdgShapeList", "insert": "BdgShapeList.group_by(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.sort_by_distance", "sig": "BdgShapeList.sort_by_distance(target: Variant, reverse: bool = false) -> BdgShapeList", "returns": "BdgShapeList", "desc": "Sort shapes by distance to a target point/shape", "insert": "BdgShapeList.sort_by_distance(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.distance_to", "sig": "BdgShapeList.distance_to(other: BdgShapeList) -> float", "returns": "float", "desc": "minimum distance between the shapes of this list and another list", "insert": "BdgShapeList.distance_to(${0})"},
+		{"category": "Topology", "name": "BdgShapeList.distance_to_with_closest_points", "sig": "BdgShapeList.distance_to_with_closest_points(other: BdgShapeList) -> Dictionary", "returns": "Dictionary", "desc": "minimum distance and the closest point pairs (via BRepExtrema_DistShapeShape)", "insert": "BdgShapeList.distance_to_with_closest_points(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_from_wires", "sig": "static BdgFace.make_from_wires(outer_wire: BdgWire, inner_wires: Array = []) -> BdgFace", "returns": "BdgFace", "desc": "create a face from an outer wire with optional hole wires", "insert": "BdgFace.make_from_wires(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_rect", "sig": "static BdgFace.make_rect(width: float, height: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a rectangle face centered on origin of plane", "insert": "BdgFace.make_rect(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_circle", "sig": "static BdgFace.make_circle(radius: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a circle face in a plane", "insert": "BdgFace.make_circle(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_ellipse", "sig": "static BdgFace.make_ellipse(x_radius: float, y_radius: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create an elliptical face in a plane", "insert": "BdgFace.make_ellipse(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_polygon", "sig": "static BdgFace.make_polygon(points: Array, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a polygon face from a list of points in a plane", "insert": "BdgFace.make_polygon(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_regular_polygon", "sig": "static BdgFace.make_regular_polygon(radius: float, side_count: int, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a regular polygon face (radius is the circumradius)", "insert": "BdgFace.make_regular_polygon(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_slot", "sig": "static BdgFace.make_slot(length: float, width: float, rotation_deg: float = 0.0) -> BdgFace", "returns": "BdgFace", "desc": "create a 2D slot face with semicircular ends", "insert": "BdgFace.make_slot(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_triangle", "sig": "static BdgFace.make_triangle(base: float, height: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create an isosceles triangle face (apex centered, base horizontal)", "insert": "BdgFace.make_triangle(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_trapezoid", "sig": "static BdgFace.make_trapezoid(width: float, height: float, left_inset: float, right_inset: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a trapezoid face", "insert": "BdgFace.make_trapezoid(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_rounded_rect", "sig": "static BdgFace.make_rounded_rect(width: float, height: float, radius: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a rounded rectangle face", "insert": "BdgFace.make_rounded_rect(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_slot_center_to_center", "sig": "static BdgFace.make_slot_center_to_center(center_to_center: float, height: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a slot face (rounded ends) from an overall length and width", "insert": "BdgFace.make_slot_center_to_center(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_slot_center_point", "sig": "static BdgFace.make_slot_center_point(center: Vector3, point: Vector3, height: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a slot centered at `center`, symmetric, with an end arc centered at `point`", "insert": "BdgFace.make_slot_center_point(${0})"},
+		{"category": "Topology", "name": "BdgFace.make_slot_arc", "sig": "static BdgFace.make_slot_arc(center: Vector3, radius: float, start_angle: float, arc_size: float, height: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "create a slot along a circular center-line arc (band around the arc)", "insert": "BdgFace.make_slot_arc(${0})"},
+		{"category": "Topology", "name": "BdgFace.area", "sig": "BdgFace.area() -> float", "returns": "float", "desc": "area of the face (excluding holes)", "insert": "BdgFace.area()"},
+		{"category": "Topology", "name": "BdgFace.center", "sig": "BdgFace.center() -> Vector3", "returns": "Vector3", "desc": "center of the face", "insert": "BdgFace.center()"},
+		{"category": "Topology", "name": "BdgFace.normal", "sig": "BdgFace.normal() -> Vector3", "returns": "Vector3", "desc": "normal of the face at its center", "insert": "BdgFace.normal()"},
+		{"category": "Topology", "name": "BdgFace.outer_wire", "sig": "BdgFace.outer_wire() -> BdgWire", "returns": "BdgWire", "desc": "outer wire of the face", "insert": "BdgFace.outer_wire()"},
+		{"category": "Topology", "name": "BdgFace.inner_wires", "sig": "BdgFace.inner_wires() -> Array", "returns": "Array", "desc": "inner wires (hole boundaries) of the face", "insert": "BdgFace.inner_wires()"},
+		{"category": "Topology", "name": "BdgFace.is_planar", "sig": "BdgFace.is_planar() -> bool", "returns": "bool", "desc": "Whether the underlying surface is a plane", "insert": "BdgFace.is_planar()"},
+		{"category": "Topology", "name": "BdgFace.to_plane", "sig": "BdgFace.to_plane() -> BdgPlane", "returns": "BdgPlane", "desc": "Convert this planar face to a BdgPlane (origin at center, z_dir along normal)", "insert": "BdgFace.to_plane()"},
+		{"category": "Topology", "name": "BdgFace.surface_point", "sig": "BdgFace.surface_point(u: float, v: float) -> Vector3", "returns": "Vector3", "desc": "Evaluate 3D surface point at normalized parameter (u: 0..1, v: 0..1)", "insert": "BdgFace.surface_point(${0})"},
+		{"category": "Topology", "name": "BdgFace.geometry", "sig": "BdgFace.geometry() -> String", "returns": "String", "desc": "The underlying surface geometry type name (e.g. \"PLANE\")", "insert": "BdgFace.geometry()"},
+		{"category": "Topology", "name": "BdgFace.chamfer_2d", "sig": "BdgFace.chamfer_2d(dist: float, dist2: float = 0.0, vertices: Array = [], edge: BdgEdge = null) -> BdgFace", "returns": "BdgFace", "desc": "Apply 2D chamfer to face outer boundary corners", "insert": "BdgFace.chamfer_2d(${0})"},
+		{"category": "Topology", "name": "BdgFace.fillet_2d", "sig": "BdgFace.fillet_2d(radius_val: float, vertices: Array = []) -> BdgFace", "returns": "BdgFace", "desc": "Apply 2D fillet to face outer boundary corners", "insert": "BdgFace.fillet_2d(${0})"},
+		{"category": "Topology", "name": "BdgFace.area_without_holes", "sig": "BdgFace.area_without_holes() -> float", "returns": "float", "desc": "Area of outer wire face excluding inner holes", "insert": "BdgFace.area_without_holes()"},
+		{"category": "Topology", "name": "BdgFace.without_holes", "sig": "BdgFace.without_holes() -> BdgFace", "returns": "BdgFace", "desc": "Face with inner hole wires removed", "insert": "BdgFace.without_holes()"},
+		{"category": "Topology", "name": "BdgFace.make_holes", "sig": "BdgFace.make_holes(inner_wire_list: Array) -> BdgFace", "returns": "BdgFace", "desc": "Add inner hole wires to face", "insert": "BdgFace.make_holes(${0})"},
+		{"category": "Topology", "name": "BdgFace.position_at", "sig": "BdgFace.position_at(u: float = 0.5, v: float = 0.5) -> Vector3", "returns": "Vector3", "desc": "Position at normalized UV coordinates (0..1, 0..1)", "insert": "BdgFace.position_at(${0})"},
+		{"category": "Topology", "name": "BdgFace.normal_at", "sig": "BdgFace.normal_at(u: float = 0.5, v: float = 0.5) -> Vector3", "returns": "Vector3", "desc": "Surface normal vector at normalized UV coordinates (0..1, 0..1)", "insert": "BdgFace.normal_at(${0})"},
+		{"category": "Topology", "name": "BdgFace.location_at", "sig": "BdgFace.location_at(u: float = 0.5, v: float = 0.5) -> BdgLocation", "returns": "BdgLocation", "desc": "Location at normalized UV coordinates (0..1, 0..1)", "insert": "BdgFace.location_at(${0})"},
+		{"category": "Topology", "name": "BdgFace.center_location", "sig": "BdgFace.center_location() -> BdgLocation", "returns": "BdgLocation", "desc": "Location at center of face", "insert": "BdgFace.center_location()"},
+		{"category": "Topology", "name": "BdgFace.is_coplanar", "sig": "BdgFace.is_coplanar(other: BdgFace, tol: float = 1e-5) -> bool", "returns": "bool", "desc": "Check if face is coplanar with another face", "insert": "BdgFace.is_coplanar(${0})"},
+		{"category": "Topology", "name": "BdgFace.is_inside", "sig": "BdgFace.is_inside(point: Vector3, tol: float = 1e-5) -> bool", "returns": "bool", "desc": "Check if 3D point lies inside planar face", "insert": "BdgFace.is_inside(${0})"},
+		{"category": "Topology", "name": "BdgFace.radius", "sig": "BdgFace.radius() -> float", "returns": "float", "desc": "Radius of underlying cylinder/sphere/torus", "insert": "BdgFace.radius()"},
+		{"category": "Topology", "name": "BdgFace.width", "sig": "BdgFace.width() -> float", "returns": "float", "desc": "Width of bounding box in face plane", "insert": "BdgFace.width()"},
+		{"category": "Topology", "name": "BdgFace.length", "sig": "BdgFace.length() -> float", "returns": "float", "desc": "Length of bounding box in face plane", "insert": "BdgFace.length()"},
+		{"category": "Topology", "name": "BdgFace.sew_faces", "sig": "static BdgFace.sew_faces(face_list: Array) -> BdgShell", "returns": "BdgShell", "desc": "Sew an array of faces into a shell", "insert": "BdgFace.sew_faces(${0})"},
+		{"category": "Objects", "name": "BdgJoint.make_rigid", "sig": "static BdgJoint.make_rigid(p_loc: BdgLocation, c_loc: BdgLocation, lbl: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a rigid fixed joint", "insert": "BdgJoint.make_rigid(${0})"},
+		{"category": "Objects", "name": "BdgJoint.make_revolute", "sig": "static BdgJoint.make_revolute(p_loc: BdgLocation, c_loc: BdgLocation, ax: BdgAxis, min_ang: float = -180.0, max_ang: float = 180.0, lbl: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a revolute (rotational) joint", "insert": "BdgJoint.make_revolute(${0})"},
+		{"category": "Objects", "name": "BdgJoint.make_linear", "sig": "static BdgJoint.make_linear(p_loc: BdgLocation, c_loc: BdgLocation, ax: BdgAxis, min_dist: float = 0.0, max_dist: float = 100.0, lbl: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a linear (prismatic sliding) joint", "insert": "BdgJoint.make_linear(${0})"},
+		{"category": "Objects", "name": "BdgJoint.compute_child_location", "sig": "BdgJoint.compute_child_location(val: float = 0.0) -> BdgLocation", "returns": "BdgLocation", "desc": "Compute relative transform for child shape at current position", "insert": "BdgJoint.compute_child_location(${0})"},
+		{"category": "Objects", "name": "BdgAssembly.add", "sig": "BdgAssembly.add(child: Variant, child_label: String = \"\", child_loc: BdgLocation = null, child_color: Color = Color.WHITE) -> BdgAssembly", "returns": "BdgAssembly", "desc": "Add a child shape or sub-assembly to this assembly.", "insert": "BdgAssembly.add(${0})"},
+		{"category": "Objects", "name": "BdgAssembly.add_child", "sig": "BdgAssembly.add_child(child: Variant, child_label: String = \"\", child_loc: BdgLocation = null, child_color: Color = Color.WHITE) -> BdgAssembly", "returns": "BdgAssembly", "desc": "Alias for add(child, child_label, child_loc, child_color)", "insert": "BdgAssembly.add_child(${0})"},
+		{"category": "Objects", "name": "BdgAssembly.add_joint", "sig": "BdgAssembly.add_joint(joint: BdgJoint) -> void", "returns": "void", "desc": "Add a joint constraint between components", "insert": "BdgAssembly.add_joint(${0})"},
+		{"category": "Objects", "name": "BdgAssembly.find", "sig": "BdgAssembly.find(child_name: String) -> BdgAssembly", "returns": "BdgAssembly", "desc": "Find child assembly by name", "insert": "BdgAssembly.find(${0})"},
+		{"category": "Objects", "name": "BdgAssembly.world_location", "sig": "BdgAssembly.world_location() -> BdgLocation", "returns": "BdgLocation", "desc": "Compute total world/global transform location", "insert": "BdgAssembly.world_location()"},
+		{"category": "Objects", "name": "BdgAssembly.to_compound", "sig": "BdgAssembly.to_compound() -> BdgCompound", "returns": "BdgCompound", "desc": "Flatten assembly into a single BdgCompound containing all positioned shapes.", "insert": "BdgAssembly.to_compound()"},
+		{"category": "Objects", "name": "BdgAssembly.export_step", "sig": "BdgAssembly.export_step(path: String) -> bool", "returns": "bool", "desc": "Export entire assembly as STEP file", "insert": "BdgAssembly.export_step(${0})"},
+		{"category": "Objects", "name": "BdgAssembly.export_stl", "sig": "BdgAssembly.export_stl(path: String) -> bool", "returns": "bool", "desc": "Export entire assembly as STL mesh", "insert": "BdgAssembly.export_stl(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.length", "sig": "BdgMixin1D.length() -> float", "returns": "float", "desc": "Total length of the shape", "insert": "BdgMixin1D.length()"},
+		{"category": "Objects", "name": "BdgMixin1D.is_closed", "sig": "BdgMixin1D.is_closed() -> bool", "returns": "bool", "desc": "Method is_closed in class BdgMixin1D.", "insert": "BdgMixin1D.is_closed()"},
+		{"category": "Objects", "name": "BdgMixin1D.position_at", "sig": "BdgMixin1D.position_at(position: float) -> Vector3", "returns": "Vector3", "desc": "Position at given parameter (0..1) along the curve. Uses the edge's Geom_Curve.", "insert": "BdgMixin1D.position_at(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.param_at_distance", "sig": "BdgMixin1D.param_at_distance(dist: float) -> float", "returns": "float", "desc": "Find normalized parameter (0..1) at given arclength distance along the curve.", "insert": "BdgMixin1D.param_at_distance(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.start_point", "sig": "BdgMixin1D.start_point() -> Vector3", "returns": "Vector3", "desc": "Method start_point in class BdgMixin1D.", "insert": "BdgMixin1D.start_point()"},
+		{"category": "Objects", "name": "BdgMixin1D.end_point", "sig": "BdgMixin1D.end_point() -> Vector3", "returns": "Vector3", "desc": "Method end_point in class BdgMixin1D.", "insert": "BdgMixin1D.end_point()"},
+		{"category": "Objects", "name": "BdgMixin1D.tangent_at", "sig": "BdgMixin1D.tangent_at(position: float) -> Vector3", "returns": "Vector3", "desc": "Tangent unit vector at parameter (0..1) along the curve.", "insert": "BdgMixin1D.tangent_at(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.normal_at", "sig": "BdgMixin1D.normal_at(position: float) -> Vector3", "returns": "Vector3", "desc": "Principal normal unit vector at parameter (0..1) along the curve.", "insert": "BdgMixin1D.normal_at(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.curvature_at", "sig": "BdgMixin1D.curvature_at(position: float) -> float", "returns": "float", "desc": "Curvature (1 / radius) at parameter (0..1) along the curve.", "insert": "BdgMixin1D.curvature_at(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.radius_at", "sig": "BdgMixin1D.radius_at(position: float) -> float", "returns": "float", "desc": "Radius of curvature at parameter (0..1). INF if straight.", "insert": "BdgMixin1D.radius_at(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.positions", "sig": "BdgMixin1D.positions(count_or_params: Variant) -> Array[Vector3]", "returns": "Array[Vector3]", "desc": "Sample positions at given count or array of parameters (0..1).", "insert": "BdgMixin1D.positions(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.locations", "sig": "BdgMixin1D.locations(count_or_params: Variant) -> Array[BdgLocation]", "returns": "Array[BdgLocation]", "desc": "Sample Locations along the curve (position + tangent orientation).", "insert": "BdgMixin1D.locations(${0})"},
+		{"category": "Objects", "name": "BdgMixin1D.center", "sig": "BdgMixin1D.center() -> Vector3", "returns": "Vector3", "desc": "center of the edge/wire", "insert": "BdgMixin1D.center()"},
+		{"category": "Objects", "name": "BdgMixin1D.tessellate_edge", "sig": "BdgMixin1D.tessellate_edge(tolerance: float = 0.02) -> PackedVector3Array", "returns": "PackedVector3Array", "desc": "Tessellate this 1D edge/wire into a polyline point array.", "insert": "BdgMixin1D.tessellate_edge(${0})"},
+		{"category": "Objects", "name": "BdgConstants.convert", "sig": "static BdgConstants.convert(value: float, from_unit: int, to_unit: int = BdgEnums.Unit.MM) -> float", "returns": "float", "desc": "Method convert in class BdgConstants.", "insert": "BdgConstants.convert(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.get_angle", "sig": "static BdgVector.get_angle(a: Vector3, b: Vector3) -> float", "returns": "float", "desc": "unsigned angle in degrees between two vectors", "insert": "BdgVector.get_angle(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.get_signed_angle", "sig": "static BdgVector.get_signed_angle(a: Vector3, b: Vector3, normal: Vector3 = Vector3(0, 0, -1) -> Variant", "returns": "Variant", "desc": "signed angle in degrees between two vectors with given normal angle = atan2((a x b) . n, a . b)", "insert": "BdgVector.get_signed_angle(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.project_to_line", "sig": "static BdgVector.project_to_line(a: Vector3, line: Vector3) -> Vector3", "returns": "Vector3", "desc": "project vector a onto the line represented by Vector3 line", "insert": "BdgVector.project_to_line(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.distance_to_plane", "sig": "static BdgVector.distance_to_plane(p: Vector3, plane_origin: Vector3, plane_normal: Vector3) -> float", "returns": "float", "desc": "minimum unsigned distance between point and plane (BdgPlane or gp_Pln style)", "insert": "BdgVector.distance_to_plane(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.signed_distance_from_plane", "sig": "static BdgVector.signed_distance_from_plane(p: Vector3, plane_origin: Vector3, plane_z: Vector3) -> float", "returns": "float", "desc": "signed distance from plane to point", "insert": "BdgVector.signed_distance_from_plane(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.project_to_plane", "sig": "static BdgVector.project_to_plane(p: Vector3, plane_origin: Vector3, plane_normal: Vector3) -> Vector3", "returns": "Vector3", "desc": "project point onto plane defined by origin + normal", "insert": "BdgVector.project_to_plane(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.rotate", "sig": "static BdgVector.rotate(v: Vector3, axis_pos: Vector3, axis_dir: Vector3, angle_deg: float) -> Vector3", "returns": "Vector3", "desc": "rotate vector about an axis (position + direction) by angle in degrees", "insert": "BdgVector.rotate(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.distance", "sig": "static BdgVector.distance(a: Vector3, b: Vector3) -> float", "returns": "float", "desc": "signed distance between two vectors (points)", "insert": "BdgVector.distance(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.multiply", "sig": "static BdgVector.multiply(a: Vector3, s: float) -> Vector3", "returns": "Vector3", "desc": "multiply component-wise", "insert": "BdgVector.multiply(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.copy", "sig": "static BdgVector.copy(v: Vector3) -> Vector3", "returns": "Vector3", "desc": "copy", "insert": "BdgVector.copy(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.add", "sig": "static BdgVector.add(a: Vector3, b: Vector3) -> Vector3", "returns": "Vector3", "desc": "Add two vectors", "insert": "BdgVector.add(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.sub", "sig": "static BdgVector.sub(a: Vector3, b: Vector3) -> Vector3", "returns": "Vector3", "desc": "Subtract two vectors", "insert": "BdgVector.sub(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.to_dir", "sig": "static BdgVector.to_dir(v: Vector3) -> Vector3", "returns": "Vector3", "desc": "Return unit direction vector", "insert": "BdgVector.to_dir(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.to_pnt", "sig": "static BdgVector.to_pnt(v: Vector3) -> Vector3", "returns": "Vector3", "desc": "Return point vector (alias for self)", "insert": "BdgVector.to_pnt(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.to_tuple", "sig": "static BdgVector.to_tuple(v: Vector3) -> Array", "returns": "Array", "desc": "Convert vector to array tuple [x, y, z]", "insert": "BdgVector.to_tuple(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.transform", "sig": "static BdgVector.transform(v: Vector3, matrix_or_loc: Variant) -> Vector3", "returns": "Vector3", "desc": "Transform vector by a matrix or location", "insert": "BdgVector.transform(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.reverse", "sig": "static BdgVector.reverse(v: Vector3) -> Vector3", "returns": "Vector3", "desc": "Reverse vector direction", "insert": "BdgVector.reverse(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.to_vector3", "sig": "static BdgVector.to_vector3(val: Variant) -> Vector3", "returns": "Vector3", "desc": "Seamless conversion helper to Godot Vector3", "insert": "BdgVector.to_vector3(${0})"},
+		{"category": "Math & Geometry", "name": "BdgVector.trim_float", "sig": "static BdgVector.trim_float(x: float, precision: int, tol: float = TOL) -> float", "returns": "float", "desc": "wrap zeros below tolerance (build123d format-style trimming)", "insert": "BdgVector.trim_float(${0})"},
+		{"category": "Math & Geometry", "name": "BdgColor.categorical_set", "sig": "static BdgColor.categorical_set(idx: int) -> BdgColor", "returns": "BdgColor", "desc": "Generate a distinct color from categorical palette index", "insert": "BdgColor.categorical_set(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.set_location", "sig": "BdgPlane.set_location(value: Vector3) -> void", "returns": "void", "desc": "Set location (origin)", "insert": "BdgPlane.set_location(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.wrapped", "sig": "BdgPlane.wrapped() -> OcgGpPln", "returns": "OcgGpPln", "desc": "The plane's wrapped OCCT gp_Pln", "insert": "BdgPlane.wrapped()"},
+		{"category": "Math & Geometry", "name": "BdgPlane.reverse", "sig": "BdgPlane.reverse() -> void", "returns": "void", "desc": "Flip the plane normal", "insert": "BdgPlane.reverse()"},
+		{"category": "Math & Geometry", "name": "BdgPlane.distance", "sig": "BdgPlane.distance(p: Vector3) -> float", "returns": "float", "desc": "Distance from a point to the plane (unsigned)", "insert": "BdgPlane.distance(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.project", "sig": "BdgPlane.project(p: Vector3) -> Vector3", "returns": "Vector3", "desc": "Project a point onto the plane", "insert": "BdgPlane.project(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.signed_distance", "sig": "BdgPlane.signed_distance(p: Vector3) -> float", "returns": "float", "desc": "Signed distance from the plane to point p", "insert": "BdgPlane.signed_distance(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.to_axis", "sig": "BdgPlane.to_axis() -> BdgAxis", "returns": "BdgAxis", "desc": "Method to_axis in class BdgPlane.", "insert": "BdgPlane.to_axis()"},
+		{"category": "Math & Geometry", "name": "BdgPlane.to_ax2", "sig": "BdgPlane.to_ax2() -> OcgGpAx2", "returns": "OcgGpAx2", "desc": "Convert to an OCCT gp_Ax2 with x_dir as X and z_dir as Z", "insert": "BdgPlane.to_ax2()"},
+		{"category": "Math & Geometry", "name": "BdgPlane.offset", "sig": "BdgPlane.offset(dist: float) -> BdgPlane", "returns": "BdgPlane", "desc": "Create a new plane shifted along its normal z_dir by distance.", "insert": "BdgPlane.offset(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.location", "sig": "BdgPlane.location() -> BdgLocation", "returns": "BdgLocation", "desc": "Return location corresponding to this plane (origin + orientation)", "insert": "BdgPlane.location()"},
+		{"category": "Math & Geometry", "name": "BdgPlane.shift_origin", "sig": "BdgPlane.shift_origin(new_origin: Vector3) -> BdgPlane", "returns": "BdgPlane", "desc": "Return new plane with origin shifted to new_origin", "insert": "BdgPlane.shift_origin(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.to_local_coords", "sig": "BdgPlane.to_local_coords(world_p: Vector3) -> Vector3", "returns": "Vector3", "desc": "Transform world 3D point/vector into local plane 2D/3D coordinates", "insert": "BdgPlane.to_local_coords(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.from_local_coords", "sig": "BdgPlane.from_local_coords(local_p: Vector3) -> Vector3", "returns": "Vector3", "desc": "Transform local plane 2D/3D coordinates into world 3D coordinates", "insert": "BdgPlane.from_local_coords(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.forward_transform", "sig": "BdgPlane.forward_transform() -> BdgMatrix", "returns": "BdgMatrix", "desc": "Forward 4x4 matrix mapping local plane space to world space", "insert": "BdgPlane.forward_transform()"},
+		{"category": "Math & Geometry", "name": "BdgPlane.reverse_transform", "sig": "BdgPlane.reverse_transform() -> BdgMatrix", "returns": "BdgMatrix", "desc": "Reverse 4x4 matrix mapping world space to local plane space", "insert": "BdgPlane.reverse_transform()"},
+		{"category": "Math & Geometry", "name": "BdgPlane.rotated", "sig": "BdgPlane.rotated(angle_deg: float, axis_vector: Vector3 = Vector3.ZERO) -> BdgPlane", "returns": "BdgPlane", "desc": "Create a new plane rotated by angle_deg around an axis vector or local axis", "insert": "BdgPlane.rotated(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.move", "sig": "BdgPlane.move(offset_vec: Vector3) -> BdgPlane", "returns": "BdgPlane", "desc": "Move plane origin in-place by offset_vec", "insert": "BdgPlane.move(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.moved", "sig": "BdgPlane.moved(offset_vec: Vector3) -> BdgPlane", "returns": "BdgPlane", "desc": "Move plane origin returning a new BdgPlane", "insert": "BdgPlane.moved(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.contains", "sig": "BdgPlane.contains(p: Vector3, tolerance: float = 1e-5) -> bool", "returns": "bool", "desc": "Check if point lies within plane tolerance", "insert": "BdgPlane.contains(${0})"},
+		{"category": "Math & Geometry", "name": "BdgPlane.intersect", "sig": "BdgPlane.intersect(other: Variant) -> Variant", "returns": "Variant", "desc": "Compute line of intersection with another plane, or point of intersection with line/axis", "insert": "BdgPlane.intersect(${0})"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.wrapped", "sig": "BdgBoundBox.wrapped() -> OcgBndBox", "returns": "OcgBndBox", "desc": "Method wrapped in class BdgBoundBox.", "insert": "BdgBoundBox.wrapped()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.is_void", "sig": "BdgBoundBox.is_void() -> bool", "returns": "bool", "desc": "Method is_void in class BdgBoundBox.", "insert": "BdgBoundBox.is_void()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.size", "sig": "BdgBoundBox.size() -> Vector3", "returns": "Vector3", "desc": "Method size in class BdgBoundBox.", "insert": "BdgBoundBox.size()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.center", "sig": "BdgBoundBox.center() -> Vector3", "returns": "Vector3", "desc": "Method center in class BdgBoundBox.", "insert": "BdgBoundBox.center()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.diagonal", "sig": "BdgBoundBox.diagonal() -> float", "returns": "float", "desc": "Method diagonal in class BdgBoundBox.", "insert": "BdgBoundBox.diagonal()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.diagonal_length", "sig": "BdgBoundBox.diagonal_length() -> float", "returns": "float", "desc": "Method diagonal_length in class BdgBoundBox.", "insert": "BdgBoundBox.diagonal_length()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.contains", "sig": "BdgBoundBox.contains(p: Vector3, tolerance: float = 1e-6) -> bool", "returns": "bool", "desc": "Method contains in class BdgBoundBox.", "insert": "BdgBoundBox.contains(${0})"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.add_box", "sig": "BdgBoundBox.add_box(other: BdgBoundBox) -> void", "returns": "void", "desc": "Method add_box in class BdgBoundBox.", "insert": "BdgBoundBox.add_box(${0})"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.add", "sig": "BdgBoundBox.add(other: Variant) -> void", "returns": "void", "desc": "Generic add method (box or vector/point)", "insert": "BdgBoundBox.add(${0})"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.is_inside", "sig": "BdgBoundBox.is_inside(other: Variant, tolerance: float = 1e-6) -> bool", "returns": "bool", "desc": "Check if point or box is inside this bounding box", "insert": "BdgBoundBox.is_inside(${0})"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.measure", "sig": "BdgBoundBox.measure() -> Vector3", "returns": "Vector3", "desc": "Measure box dimensions (returns size)", "insert": "BdgBoundBox.measure()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.overlaps", "sig": "BdgBoundBox.overlaps(other: BdgBoundBox, tolerance: float = 1e-6) -> bool", "returns": "bool", "desc": "Check if two bounding boxes overlap", "insert": "BdgBoundBox.overlaps(${0})"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.to_align_offset", "sig": "BdgBoundBox.to_align_offset(align: Variant) -> Vector3", "returns": "Vector3", "desc": "Compute alignment offset vector for aligning shapes", "insert": "BdgBoundBox.to_align_offset(${0})"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.find_outside_box_2d", "sig": "BdgBoundBox.find_outside_box_2d() -> Array", "returns": "Array", "desc": "Find outside box bounds in 2D plane", "insert": "BdgBoundBox.find_outside_box_2d()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.to_aabb", "sig": "BdgBoundBox.to_aabb() -> AABB", "returns": "AABB", "desc": "Convert to Godot native AABB", "insert": "BdgBoundBox.to_aabb()"},
+		{"category": "Math & Geometry", "name": "BdgBoundBox.enlarge", "sig": "BdgBoundBox.enlarge(delta: float) -> void", "returns": "void", "desc": "expand by a scalar on all sides", "insert": "BdgBoundBox.enlarge(${0})"},
+		{"category": "Math & Geometry", "name": "BdgAxis.wrapped", "sig": "BdgAxis.wrapped() -> OcgGpAx1", "returns": "OcgGpAx1", "desc": "The wrapped OCCT gp_Ax1", "insert": "BdgAxis.wrapped()"},
+		{"category": "Math & Geometry", "name": "BdgAxis.flipped", "sig": "BdgAxis.flipped() -> BdgAxis", "returns": "BdgAxis", "desc": "Flip axis direction", "insert": "BdgAxis.flipped()"},
+		{"category": "Math & Geometry", "name": "BdgAxis.reverse", "sig": "BdgAxis.reverse() -> BdgAxis", "returns": "BdgAxis", "desc": "Alias for flipped (Python parity)", "insert": "BdgAxis.reverse()"},
+		{"category": "Math & Geometry", "name": "BdgAxis.location", "sig": "BdgAxis.location() -> BdgLocation", "returns": "BdgLocation", "desc": "Return location corresponding to this axis (position and direction as Z)", "insert": "BdgAxis.location()"},
+		{"category": "Math & Geometry", "name": "BdgAxis.to_plane", "sig": "BdgAxis.to_plane() -> BdgPlane", "returns": "BdgPlane", "desc": "Convert axis to plane perpendicular to direction or containing axis", "insert": "BdgAxis.to_plane()"},
+		{"category": "Math & Geometry", "name": "BdgAxis.angle_between", "sig": "BdgAxis.angle_between(other: BdgAxis) -> float", "returns": "float", "desc": "Angle in degrees between this axis direction and another axis direction", "insert": "BdgAxis.angle_between(${0})"},
+		{"category": "Math & Geometry", "name": "BdgAxis.is_coaxial", "sig": "BdgAxis.is_coaxial(other: BdgAxis, tol_angle_deg: float = 1e-3, tol_dist: float = 1e-4) -> bool", "returns": "bool", "desc": "Returns true if axes are coaxial (collinear) within tolerance", "insert": "BdgAxis.is_coaxial(${0})"},
+		{"category": "Math & Geometry", "name": "BdgAxis.is_normal", "sig": "BdgAxis.is_normal(other: BdgAxis, tol_deg: float = 1e-3) -> bool", "returns": "bool", "desc": "Returns true if axis directions are normal (perpendicular) within tolerance", "insert": "BdgAxis.is_normal(${0})"},
+		{"category": "Math & Geometry", "name": "BdgAxis.is_opposite", "sig": "BdgAxis.is_opposite(other: BdgAxis, tol_deg: float = 1e-3) -> bool", "returns": "bool", "desc": "Returns true if axis directions are opposite (anti-parallel) within tolerance", "insert": "BdgAxis.is_opposite(${0})"},
+		{"category": "Math & Geometry", "name": "BdgAxis.is_parallel", "sig": "BdgAxis.is_parallel(other: BdgAxis, tol_deg: float = 1e-3) -> bool", "returns": "bool", "desc": "Returns true if axis directions are parallel within tolerance", "insert": "BdgAxis.is_parallel(${0})"},
+		{"category": "Math & Geometry", "name": "BdgAxis.is_skew", "sig": "BdgAxis.is_skew(other: BdgAxis, tol_deg: float = 1e-3, tol_dist: float = 1e-4) -> bool", "returns": "bool", "desc": "Returns true if axes are skew (non-parallel and non-intersecting)", "insert": "BdgAxis.is_skew(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.new_identity", "sig": "static BdgMatrix.new_identity() -> BdgMatrix", "returns": "BdgMatrix", "desc": "identity", "insert": "BdgMatrix.new_identity()"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.wrapped", "sig": "BdgMatrix.wrapped() -> OcgGpTrsf", "returns": "OcgGpTrsf", "desc": "Method wrapped in class BdgMatrix.", "insert": "BdgMatrix.wrapped()"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.get_values", "sig": "BdgMatrix.get_values() -> Array", "returns": "Array", "desc": "4x4 matrix values (OCCT convention: [a11..a34])", "insert": "BdgMatrix.get_values()"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.to_transform3d", "sig": "BdgMatrix.to_transform3d() -> Transform3D", "returns": "Transform3D", "desc": "Extract as a Godot Transform3D", "insert": "BdgMatrix.to_transform3d()"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.rotation_about", "sig": "static BdgMatrix.rotation_about(axis_pos: Vector3, axis_dir: Vector3, angle_deg: float) -> BdgMatrix", "returns": "BdgMatrix", "desc": "Build a rotation matrix about an axis by angle in degrees", "insert": "BdgMatrix.rotation_about(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.translation", "sig": "static BdgMatrix.translation(v: Vector3) -> BdgMatrix", "returns": "BdgMatrix", "desc": "Translation matrix", "insert": "BdgMatrix.translation(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.scaling", "sig": "static BdgMatrix.scaling(center: Vector3, s: Vector3) -> BdgMatrix", "returns": "BdgMatrix", "desc": "Scale matrix", "insert": "BdgMatrix.scaling(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.multiplied", "sig": "BdgMatrix.multiplied(other: BdgMatrix) -> BdgMatrix", "returns": "BdgMatrix", "desc": "Compose: self * other (apply self after other)", "insert": "BdgMatrix.multiplied(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.inverted", "sig": "BdgMatrix.inverted() -> BdgMatrix", "returns": "BdgMatrix", "desc": "Method inverted in class BdgMatrix.", "insert": "BdgMatrix.inverted()"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.inverse", "sig": "BdgMatrix.inverse() -> BdgMatrix", "returns": "BdgMatrix", "desc": "Alias for inverted (Python parity)", "insert": "BdgMatrix.inverse()"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.multiply", "sig": "BdgMatrix.multiply(other: BdgMatrix) -> BdgMatrix", "returns": "BdgMatrix", "desc": "Alias for multiplied (Python parity)", "insert": "BdgMatrix.multiply(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.rotate", "sig": "BdgMatrix.rotate(axis_pos_or_dir: Variant, angle_deg: float = 0.0) -> BdgMatrix", "returns": "BdgMatrix", "desc": "Rotate matrix in-place or returning new BdgMatrix around axis", "insert": "BdgMatrix.rotate(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.transposed_list", "sig": "BdgMatrix.transposed_list() -> Array", "returns": "Array", "desc": "Return 4x4 matrix values formatted as a transposed 4x4 nested array", "insert": "BdgMatrix.transposed_list()"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.apply", "sig": "BdgMatrix.apply(p: Vector3) -> Vector3", "returns": "Vector3", "desc": "Apply this transform to a point", "insert": "BdgMatrix.apply(${0})"},
+		{"category": "Math & Geometry", "name": "BdgMatrix.apply_dir", "sig": "BdgMatrix.apply_dir(d: Vector3) -> Vector3", "returns": "Vector3", "desc": "Apply this transform to a direction (no translation)", "insert": "BdgMatrix.apply_dir(${0})"},
+		{"category": "Math & Geometry", "name": "BdgLocation.new_identity", "sig": "static BdgLocation.new_identity() -> BdgLocation", "returns": "BdgLocation", "desc": "identity location", "insert": "BdgLocation.new_identity()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.wrapped", "sig": "BdgLocation.wrapped() -> OcgTopLocLocation", "returns": "OcgTopLocLocation", "desc": "Method wrapped in class BdgLocation.", "insert": "BdgLocation.wrapped()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.inverted", "sig": "BdgLocation.inverted() -> BdgLocation", "returns": "BdgLocation", "desc": "Method inverted in class BdgLocation.", "insert": "BdgLocation.inverted()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.inverse", "sig": "BdgLocation.inverse() -> BdgLocation", "returns": "BdgLocation", "desc": "Alias for inverted (Python parity)", "insert": "BdgLocation.inverse()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.multiplied", "sig": "BdgLocation.multiplied(other: BdgLocation) -> BdgLocation", "returns": "BdgLocation", "desc": "Combine two locations: self * other", "insert": "BdgLocation.multiplied(${0})"},
+		{"category": "Math & Geometry", "name": "BdgLocation.mirror", "sig": "BdgLocation.mirror(plane_or_axis: Variant) -> BdgLocation", "returns": "BdgLocation", "desc": "Mirror location across a plane or axis", "insert": "BdgLocation.mirror(${0})"},
+		{"category": "Math & Geometry", "name": "BdgLocation.to_axis", "sig": "BdgLocation.to_axis() -> BdgAxis", "returns": "BdgAxis", "desc": "Convert location orientation/position to BdgAxis along Z axis", "insert": "BdgLocation.to_axis()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.to_tuple", "sig": "BdgLocation.to_tuple() -> Array", "returns": "Array", "desc": "Convert location to array tuple [px, py, pz, qx, qy, qz, qw]", "insert": "BdgLocation.to_tuple()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.x_axis", "sig": "BdgLocation.x_axis() -> BdgAxis", "returns": "BdgAxis", "desc": "Local X axis", "insert": "BdgLocation.x_axis()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.y_axis", "sig": "BdgLocation.y_axis() -> BdgAxis", "returns": "BdgAxis", "desc": "Local Y axis", "insert": "BdgLocation.y_axis()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.z_axis", "sig": "BdgLocation.z_axis() -> BdgAxis", "returns": "BdgAxis", "desc": "Local Z axis", "insert": "BdgLocation.z_axis()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.center", "sig": "BdgLocation.center() -> Vector3", "returns": "Vector3", "desc": "Center position (alias for position)", "insert": "BdgLocation.center()"},
+		{"category": "Math & Geometry", "name": "BdgLocation.to_transform3d", "sig": "BdgLocation.to_transform3d() -> Transform3D", "returns": "Transform3D", "desc": "Convert to Godot Transform3D", "insert": "BdgLocation.to_transform3d()"},
+		{"category": "Operations", "name": "BdgOperations.add", "sig": "static BdgOperations.add(objects: Variant, mode: int = BdgEnums.Mode.ADD) -> Variant", "returns": "Variant", "desc": "Method add in class BdgOperations.", "insert": "BdgOperations.add(${0})"},
+		{"category": "Operations", "name": "BdgOperations.mirror", "sig": "static BdgOperations.mirror(objects: Variant, about: BdgPlane = null) -> Variant", "returns": "Variant", "desc": "Method mirror in class BdgOperations.", "insert": "BdgOperations.mirror(${0})"},
+		{"category": "Operations", "name": "BdgOperations.scale", "sig": "static BdgOperations.scale(objects: Variant, factor: Variant, center: Vector3 = Vector3.ZERO) -> Variant", "returns": "Variant", "desc": "Method scale in class BdgOperations.", "insert": "BdgOperations.scale(${0})"},
+		{"category": "Operations", "name": "BdgOperations.offset", "sig": "static BdgOperations.offset(objects: Variant, amount: float, kind: int = 0) -> Variant", "returns": "Variant", "desc": "Method offset in class BdgOperations.", "insert": "BdgOperations.offset(${0})"},
+		{"category": "Operations", "name": "BdgOperations.project", "sig": "static BdgOperations.project(objects: Variant, target: BdgShape, direction: Vector3 = Vector3.ZERO) -> Array", "returns": "Array", "desc": "Method project in class BdgOperations.", "insert": "BdgOperations.project(${0})"},
+		{"category": "Operations", "name": "BdgOperations.split", "sig": "static BdgOperations.split(objects: Variant, bisect_by: Variant, keep: int = BdgEnums.Keep.TOP) -> Variant", "returns": "Variant", "desc": "Method split in class BdgOperations.", "insert": "BdgOperations.split(${0})"},
+		{"category": "Operations", "name": "BdgOperations.bounding_box", "sig": "static BdgOperations.bounding_box(objects: Variant) -> BdgBoundBox", "returns": "BdgBoundBox", "desc": "Method bounding_box in class BdgOperations.", "insert": "BdgOperations.bounding_box(${0})"},
+		{"category": "Operations", "name": "BdgOperations.make_face", "sig": "static BdgOperations.make_face(wires_or_edges: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Method make_face in class BdgOperations.", "insert": "BdgOperations.make_face(${0})"},
+		{"category": "Operations", "name": "BdgOperations.make_hull", "sig": "static BdgOperations.make_hull(points_or_shapes: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Method make_hull in class BdgOperations.", "insert": "BdgOperations.make_hull(${0})"},
+		{"category": "Operations", "name": "BdgOperations.trace", "sig": "static BdgOperations.trace(wire: BdgWire, distance: float, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Method trace in class BdgOperations.", "insert": "BdgOperations.trace(${0})"},
+		{"category": "Operations", "name": "BdgOperations.loft", "sig": "static BdgOperations.loft(objs: Array, ruled: bool = false, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Method loft in class BdgOperations.", "insert": "BdgOperations.loft(${0})"},
+		{"category": "Operations", "name": "BdgOperations.fillet", "sig": "static BdgOperations.fillet(objects: Variant, radius: float) -> BdgShape", "returns": "BdgShape", "desc": "Method fillet in class BdgOperations.", "insert": "BdgOperations.fillet(${0})"},
+		{"category": "Operations", "name": "BdgOperations.chamfer", "sig": "static BdgOperations.chamfer(objects: Variant, length: float, length2: float = 0.0) -> BdgShape", "returns": "BdgShape", "desc": "Method chamfer in class BdgOperations.", "insert": "BdgOperations.chamfer(${0})"},
+		{"category": "Operations", "name": "BdgOperations.section", "sig": "static BdgOperations.section(shape: BdgShape, plane: BdgPlane = null) -> Array", "returns": "Array", "desc": "Method section in class BdgOperations.", "insert": "BdgOperations.section(${0})"},
+		{"category": "Operations", "name": "BdgOperations.thicken", "sig": "static BdgOperations.thicken(shape: BdgShape, amount: float, mode: int = BdgEnums.Mode.ADD) -> BdgShape", "returns": "BdgShape", "desc": "Method thicken in class BdgOperations.", "insert": "BdgOperations.thicken(${0})"},
+		{"category": "Operations", "name": "BdgOperations.hollow", "sig": "static BdgOperations.hollow(solid: BdgSolid, faces_to_remove: Array, thickness: float, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Method hollow in class BdgOperations.", "insert": "BdgOperations.hollow(${0})"},
+		{"category": "Operations", "name": "BdgOperations.draft", "sig": "static BdgOperations.draft(solid: BdgSolid, faces: Array, angle_deg: float, neutral_plane: BdgPlane, pull_dir: Vector3 = Vector3.ZERO, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Method draft in class BdgOperations.", "insert": "BdgOperations.draft(${0})"},
+		{"category": "Operations", "name": "BdgOperations.make_brake_formed", "sig": "static BdgOperations.make_brake_formed(sheet_face: BdgFace, radius: float, angle_deg: float) -> BdgShape", "returns": "BdgShape", "desc": "Method make_brake_formed in class BdgOperations.", "insert": "BdgOperations.make_brake_formed(${0})"},
+		{"category": "Operations", "name": "BdgOperations.detect_primitives", "sig": "static BdgOperations.detect_primitives(shape: BdgShape) -> Dictionary", "returns": "Dictionary", "desc": "Method detect_primitives in class BdgOperations.", "insert": "BdgOperations.detect_primitives(${0})"},
+		{"category": "Operations", "name": "BdgOperations.sort_wires_by_build_order", "sig": "static BdgOperations.sort_wires_by_build_order(wires: Array) -> Array", "returns": "Array", "desc": "Method sort_wires_by_build_order in class BdgOperations.", "insert": "BdgOperations.sort_wires_by_build_order(${0})"},
+		{"category": "Operations", "name": "BdgOperations.all_location_like", "sig": "static BdgOperations.all_location_like(objs: Array) -> bool", "returns": "bool", "desc": "Method all_location_like in class BdgOperations.", "insert": "BdgOperations.all_location_like(${0})"},
+		{"category": "Operations", "name": "BdgOperations.to_align_offset", "sig": "static BdgOperations.to_align_offset(bbox: BdgBoundBox, align: Variant) -> Vector3", "returns": "Vector3", "desc": "Method to_align_offset in class BdgOperations.", "insert": "BdgOperations.to_align_offset(${0})"},
+		{"category": "Operations", "name": "BdgOperations.find_max_dimension", "sig": "static BdgOperations.find_max_dimension(shape: BdgShape) -> float", "returns": "float", "desc": "Method find_max_dimension in class BdgOperations.", "insert": "BdgOperations.find_max_dimension(${0})"},
+		{"category": "Operations", "name": "BdgOpsGeneric.add", "sig": "static BdgOpsGeneric.add(objects: Variant, mode: int = BdgEnums.Mode.ADD) -> Variant", "returns": "Variant", "desc": "Add shapes/objects to the active builder context.", "insert": "BdgOpsGeneric.add(${0})"},
+		{"category": "Operations", "name": "BdgOpsGeneric.mirror", "sig": "static BdgOpsGeneric.mirror(objects: Variant, about: BdgPlane = null) -> Variant", "returns": "Variant", "desc": "Mirror a shape across a given plane (defaults to XY).", "insert": "BdgOpsGeneric.mirror(${0})"},
+		{"category": "Operations", "name": "BdgOpsGeneric.scale", "sig": "static BdgOpsGeneric.scale(objects: Variant, factor: Variant, center: Vector3 = Vector3.ZERO) -> Variant", "returns": "Variant", "desc": "Scale a shape uniformly (by float) or non-uniformly (by Vector3 / [sx, sy, sz]).", "insert": "BdgOpsGeneric.scale(${0})"},
+		{"category": "Operations", "name": "BdgOpsGeneric.offset", "sig": "static BdgOpsGeneric.offset(objects: Variant, amount: float, kind: int = 0) -> Variant", "returns": "Variant", "desc": "Offset a shape in 2D (face/wire) or 3D (solid).", "insert": "BdgOpsGeneric.offset(${0})"},
+		{"category": "Operations", "name": "BdgOpsGeneric.project", "sig": "static BdgOpsGeneric.project(objects: Variant, target: BdgShape, direction: Vector3 = Vector3.ZERO) -> Array", "returns": "Array", "desc": "Project a shape onto target shape surface.", "insert": "BdgOpsGeneric.project(${0})"},
+		{"category": "Operations", "name": "BdgOpsGeneric.split", "sig": "static BdgOpsGeneric.split(objects: Variant, bisect_by: Variant, keep: int = BdgEnums.Keep.TOP) -> Variant", "returns": "Variant", "desc": "Split a shape with a bisecting plane or face. keep: BdgEnums.Keep (TOP / BOTTOM / BOTH / ALL)", "insert": "BdgOpsGeneric.split(${0})"},
+		{"category": "Operations", "name": "BdgOpsGeneric.bounding_box", "sig": "static BdgOpsGeneric.bounding_box(objects: Variant) -> BdgBoundBox", "returns": "BdgBoundBox", "desc": "Compute total bounding box for one or more shapes.", "insert": "BdgOpsGeneric.bounding_box(${0})"},
+		{"category": "Operations", "name": "BdgOpsSketch.make_face", "sig": "static BdgOpsSketch.make_face(wires_or_edges: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Create a Face from one or more closed wires.", "insert": "BdgOpsSketch.make_face(${0})"},
+		{"category": "Operations", "name": "BdgOpsSketch.make_hull", "sig": "static BdgOpsSketch.make_hull(points_or_shapes: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "2D Convex Hull of points or shapes in the XY plane.", "insert": "BdgOpsSketch.make_hull(${0})"},
+		{"category": "Operations", "name": "BdgOpsSketch.trace", "sig": "static BdgOpsSketch.trace(wire: BdgWire, distance: float, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Trace a wire with a given line thickness to create a planar ribbon face.", "insert": "BdgOpsSketch.trace(${0})"},
+		{"category": "Operations", "name": "BdgOpsSketch.full_round", "sig": "static BdgOpsSketch.full_round(sketch_or_face: Variant, edge1: BdgEdge, edge2: BdgEdge, radius: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Full tangent rounding between two edges in a sketch.", "insert": "BdgOpsSketch.full_round(${0})"},
+		{"category": "Operations", "name": "BdgOpsPart.loft", "sig": "static BdgOpsPart.loft(objs: Array, ruled: bool = false, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Loft a solid through the given sections (wires / vertices).", "insert": "BdgOpsPart.loft(${0})"},
+		{"category": "Operations", "name": "BdgOpsPart.fillet", "sig": "static BdgOpsPart.fillet(objects: Variant, radius: float) -> BdgShape", "returns": "BdgShape", "desc": "Fillet edges of a solid with given radius.", "insert": "BdgOpsPart.fillet(${0})"},
+		{"category": "Operations", "name": "BdgOpsPart.chamfer", "sig": "static BdgOpsPart.chamfer(objects: Variant, length: float, length2: float = 0.0) -> BdgShape", "returns": "BdgShape", "desc": "Chamfer edges of a solid.", "insert": "BdgOpsPart.chamfer(${0})"},
+		{"category": "Operations", "name": "BdgOpsPart.section", "sig": "static BdgOpsPart.section(shape: BdgShape, plane: BdgPlane = null) -> Array", "returns": "Array", "desc": "Section a shape with a plane.", "insert": "BdgOpsPart.section(${0})"},
+		{"category": "Operations", "name": "BdgOpsPart.thicken", "sig": "static BdgOpsPart.thicken(shape: BdgShape, amount: float, mode: int = BdgEnums.Mode.ADD) -> BdgShape", "returns": "BdgShape", "desc": "Thicken a face into a solid with thickness.", "insert": "BdgOpsPart.thicken(${0})"},
+		{"category": "Operations", "name": "BdgOpsPart.hollow", "sig": "static BdgOpsPart.hollow(solid: BdgSolid, faces_to_remove: Array, thickness: float, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Hollow out a solid leaving face openings.", "insert": "BdgOpsPart.hollow(${0})"},
+		{"category": "Operations", "name": "BdgOpsPart.draft", "sig": "static BdgOpsPart.draft(solid: BdgSolid, faces: Array, angle_deg: float, neutral_plane: BdgPlane, pull_dir: Vector3 = Vector3.ZERO, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Apply draft angle to solid faces.", "insert": "BdgOpsPart.draft(${0})"},
+		{"category": "Operations", "name": "BdgPack.pack", "sig": "static BdgPack.pack(objects: Array, sheet_width: float, sheet_height: float, padding: float = 2.0) -> Array", "returns": "Array", "desc": "Pack objects into a 2D sheet (sheet_width x sheet_height) with padding. Returns Array of relocated BdgShape objects.", "insert": "BdgPack.pack(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.begin", "sig": "BdgBuilder.begin() -> void", "returns": "void", "desc": "Activate this builder as the innermost context.", "insert": "BdgBuilder.begin()"},
+		{"category": "Builders", "name": "BdgBuilder.end", "sig": "BdgBuilder.end() -> bool", "returns": "bool", "desc": "Deactivate this builder (returns true if it was the current context).", "insert": "BdgBuilder.end()"},
+		{"category": "Builders", "name": "BdgBuilder.get_current", "sig": "static BdgBuilder.get_current() -> BdgBuilder", "returns": "BdgBuilder", "desc": "Current innermost builder context (or null).", "insert": "BdgBuilder.get_current()"},
+		{"category": "Builders", "name": "BdgBuilder.add_to_current", "sig": "static BdgBuilder.add_to_current(obj: BdgShape, mode: int, builder_tag: String) -> bool", "returns": "bool", "desc": "Convenience: add an object (already built with its mode) to the current matching builder context. Returns true if handled.", "insert": "BdgBuilder.add_to_current(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.has_context", "sig": "static BdgBuilder.has_context(tag: String) -> bool", "returns": "bool", "desc": "Whether the current context is of the given tag.", "insert": "BdgBuilder.has_context(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.obj", "sig": "BdgBuilder.obj() -> BdgShape", "returns": "BdgShape", "desc": "The object built by this builder.", "insert": "BdgBuilder.obj()"},
+		{"category": "Builders", "name": "BdgBuilder.vertices", "sig": "BdgBuilder.vertices(select: int = BdgEnums.Select.ALL) -> Array", "returns": "Array", "desc": "Method vertices in class BdgBuilder.", "insert": "BdgBuilder.vertices(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.vertex", "sig": "BdgBuilder.vertex(select: int = BdgEnums.Select.ALL) -> BdgVertex", "returns": "BdgVertex", "desc": "Method vertex in class BdgBuilder.", "insert": "BdgBuilder.vertex(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.edges", "sig": "BdgBuilder.edges(select: int = BdgEnums.Select.ALL) -> Array", "returns": "Array", "desc": "Method edges in class BdgBuilder.", "insert": "BdgBuilder.edges(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.edge", "sig": "BdgBuilder.edge(select: int = BdgEnums.Select.ALL) -> BdgEdge", "returns": "BdgEdge", "desc": "Method edge in class BdgBuilder.", "insert": "BdgBuilder.edge(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.wires", "sig": "BdgBuilder.wires(select: int = BdgEnums.Select.ALL) -> Array", "returns": "Array", "desc": "Method wires in class BdgBuilder.", "insert": "BdgBuilder.wires(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.wire", "sig": "BdgBuilder.wire(select: int = BdgEnums.Select.ALL) -> BdgWire", "returns": "BdgWire", "desc": "Method wire in class BdgBuilder.", "insert": "BdgBuilder.wire(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.faces", "sig": "BdgBuilder.faces(select: int = BdgEnums.Select.ALL) -> Array", "returns": "Array", "desc": "Method faces in class BdgBuilder.", "insert": "BdgBuilder.faces(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.face", "sig": "BdgBuilder.face(select: int = BdgEnums.Select.ALL) -> BdgFace", "returns": "BdgFace", "desc": "Method face in class BdgBuilder.", "insert": "BdgBuilder.face(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.shells", "sig": "BdgBuilder.shells(select: int = BdgEnums.Select.ALL) -> Array", "returns": "Array", "desc": "Method shells in class BdgBuilder.", "insert": "BdgBuilder.shells(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.shell", "sig": "BdgBuilder.shell(select: int = BdgEnums.Select.ALL) -> BdgShell", "returns": "BdgShell", "desc": "Method shell in class BdgBuilder.", "insert": "BdgBuilder.shell(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.solids", "sig": "BdgBuilder.solids(select: int = BdgEnums.Select.ALL) -> Array", "returns": "Array", "desc": "Method solids in class BdgBuilder.", "insert": "BdgBuilder.solids(${0})"},
+		{"category": "Builders", "name": "BdgBuilder.solid", "sig": "BdgBuilder.solid(select: int = BdgEnums.Select.ALL) -> BdgSolid", "returns": "BdgSolid", "desc": "Method solid in class BdgBuilder.", "insert": "BdgBuilder.solid(${0})"},
+		{"category": "Builders", "name": "BdgBuildPart.part", "sig": "BdgBuildPart.part() -> BdgPart", "returns": "BdgPart", "desc": "The built 3D part.", "insert": "BdgBuildPart.part()"},
+		{"category": "Builders", "name": "BdgBuildSketch.sketch", "sig": "BdgBuildSketch.sketch() -> BdgSketch", "returns": "BdgSketch", "desc": "The built sketch.", "insert": "BdgBuildSketch.sketch()"},
+		{"category": "Builders", "name": "BdgBuildLine.line", "sig": "BdgBuildLine.line() -> BdgShape", "returns": "BdgShape", "desc": "The built line (a Curve/Wire of the collected edges).", "insert": "BdgBuildLine.line()"},
+		{"category": "Builders", "name": "BdgBuildLine.curve", "sig": "BdgBuildLine.curve() -> BdgShape", "returns": "BdgShape", "desc": "The built wire/curve.", "insert": "BdgBuildLine.curve()"},
+		{"category": "Patterns", "name": "BdgLocations.begin", "sig": "BdgLocations.begin() -> void", "returns": "void", "desc": "Push this location context onto the active stack.", "insert": "BdgLocations.begin()"},
+		{"category": "Patterns", "name": "BdgLocations.end", "sig": "BdgLocations.end() -> bool", "returns": "bool", "desc": "Pop this location context from the active stack.", "insert": "BdgLocations.end()"},
+		{"category": "Patterns", "name": "BdgLocations.get_current_locations", "sig": "static BdgLocations.get_current_locations() -> Array[BdgLocation]", "returns": "Array[BdgLocation]", "desc": "Get currently active locations (or empty array if none active).", "insert": "BdgLocations.get_current_locations()"},
+		{"category": "Patterns", "name": "BdgLocations.has_active_locations", "sig": "static BdgLocations.has_active_locations() -> bool", "returns": "bool", "desc": "Whether a location context is currently active.", "insert": "BdgLocations.has_active_locations()"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_stl", "sig": "static BdgIO.export_stl(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 10.0) -> bool", "returns": "bool", "desc": "Export a shape as an ASCII STL file. Returns true on success.", "insert": "BdgIO.export_stl(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_step", "sig": "static BdgIO.export_step(shape: BdgShape, path: String) -> bool", "returns": "bool", "desc": "Export a shape as a STEP file (AP214 / ManifoldSolidBrep). Returns true on success.", "insert": "BdgIO.export_step(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.import_stl", "sig": "static BdgIO.import_stl(path: String) -> BdgShape", "returns": "BdgShape", "desc": "Import an STL file (ASCII or binary) as a reference Face. The result is a mesh-based face, suitable for viewing or meshing, not for CAD boolean editing. Returns null on failure.", "insert": "BdgIO.import_stl(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.import_step", "sig": "static BdgIO.import_step(path: String) -> BdgShape", "returns": "BdgShape", "desc": "Import a STEP file using the XCAF reader, preserving assemblies, names, locations and colors. Returns a BdgShape (a BdgCompound for multi-root files, the single root shape for single-root files). Null on failure.", "insert": "BdgIO.import_step(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_stl_binary", "sig": "static BdgIO.export_stl_binary(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 10.0) -> bool", "returns": "bool", "desc": "Export a shape as a binary STL file. Returns true on success.", "insert": "BdgIO.export_stl_binary(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_brep", "sig": "static BdgIO.export_brep(shape: BdgShape, path: String) -> bool", "returns": "bool", "desc": "Export a shape in native OpenCASCADE BREP format.", "insert": "BdgIO.export_brep(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.import_brep", "sig": "static BdgIO.import_brep(path: String) -> BdgShape", "returns": "BdgShape", "desc": "Import an OpenCASCADE BREP file.", "insert": "BdgIO.import_brep(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_svg", "sig": "static BdgIO.export_svg(shape: BdgShape, path: String, plane: BdgPlane = null, scale_val: float = 1.0) -> bool", "returns": "bool", "desc": "Export 2D contours / edges of a shape to a vector SVG file.", "insert": "BdgIO.export_svg(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_dxf", "sig": "static BdgIO.export_dxf(shape: BdgShape, path: String, plane: BdgPlane = null) -> bool", "returns": "bool", "desc": "Export 2D edges of a shape to a minimal AutoCAD DXF file.", "insert": "BdgIO.export_dxf(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.import_svg", "sig": "static BdgIO.import_svg(path: String) -> Array[BdgWire]", "returns": "Array[BdgWire]", "desc": "Import 2D curves/wires from an SVG file.", "insert": "BdgIO.import_svg(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.import_dxf", "sig": "static BdgIO.import_dxf(path: String) -> Array[BdgWire]", "returns": "Array[BdgWire]", "desc": "Import 2D curves/wires from a DXF file.", "insert": "BdgIO.import_dxf(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_obj", "sig": "static BdgIO.export_obj(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export a shape as Wavefront OBJ format.", "insert": "BdgIO.export_obj(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_ply", "sig": "static BdgIO.export_ply(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export a shape as Stanford PLY format.", "insert": "BdgIO.export_ply(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_gltf", "sig": "static BdgIO.export_gltf(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export a shape as GLTF JSON format.", "insert": "BdgIO.export_gltf(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.export_to_pcbway", "sig": "static BdgIO.export_to_pcbway(shape: BdgShape, path: String) -> bool", "returns": "bool", "desc": "Export model as ZIP archive package for PCBWay fabrication quote", "insert": "BdgIO.export_to_pcbway(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.import_svg_document", "sig": "static BdgIO.import_svg_document(path: String) -> Dictionary", "returns": "Dictionary", "desc": "Import full SVG document metadata along with wires", "insert": "BdgIO.import_svg_document(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgIO.import_svg_as_buildline_code", "sig": "static BdgIO.import_svg_as_buildline_code(path: String) -> String", "returns": "String", "desc": "Import SVG path and convert to executable Bdg.build_line GDScript code", "insert": "BdgIO.import_svg_as_buildline_code(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgMesh.to_array_mesh", "sig": "static BdgMesh.to_array_mesh(shape: BdgShape, tolerance: float = 0.1, angular_tolerance: float = 10.0) -> ArrayMesh", "returns": "ArrayMesh", "desc": "Build a Godot ArrayMesh from a shape's tessellation. tolerance (linear) and angular_tolerance (degrees) control mesh density. Per-vertex normals are area-weighted smoothed from the triangle faces.", "insert": "BdgMesh.to_array_mesh(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgMesh.to_mesh_instance3d", "sig": "static BdgMesh.to_mesh_instance3d(shape: BdgShape, tolerance: float = 0.1, angular_tolerance: float = 10.0) -> MeshInstance3D", "returns": "MeshInstance3D", "desc": "Build a MeshInstance3D node displaying the shape.", "insert": "BdgMesh.to_mesh_instance3d(${0})"},
+		{"category": "I/O & Meshing", "name": "BdgMesh.triangle_count", "sig": "static BdgMesh.triangle_count(shape: BdgShape, tolerance: float = 0.1, angular_tolerance: float = 10.0) -> int", "returns": "int", "desc": "Count of triangles in a shape's tessellation.", "insert": "BdgMesh.triangle_count(${0})"},
+		{"category": "Builders", "name": "Bdg.build_part", "sig": "static Bdg.build_part(block: Callable) -> BdgPart", "returns": "BdgPart", "desc": "Build a 3D Part using a callback closure. Automatically accumulates 3D primitives and boolean operations. Returns the built BdgPart.", "insert": "Bdg.build_part(${0})"},
+		{"category": "Builders", "name": "Bdg.build_sketch", "sig": "static Bdg.build_sketch(block: Callable) -> BdgSketch", "returns": "BdgSketch", "desc": "Build a 2D Sketch using a callback closure. Automatically combines 2D planar sketch shapes. Returns the built BdgSketch.", "insert": "Bdg.build_sketch(${0})"},
+		{"category": "Builders", "name": "Bdg.build_line", "sig": "static Bdg.build_line(block: Callable) -> BdgShape", "returns": "BdgShape", "desc": "Build a 1D Line/Curve using a callback closure. Automatically connects lines, arcs, and splines into a continuous curve/wire.", "insert": "Bdg.build_line(${0})"},
+		{"category": "Builders", "name": "Bdg.last_shape", "sig": "static Bdg.last_shape() -> BdgShape", "returns": "BdgShape", "desc": "Return the current shape / object of the active builder context (or null).", "insert": "Bdg.last_shape()"},
+		{"category": "Builders", "name": "Bdg.last_solid", "sig": "static Bdg.last_solid() -> BdgSolid", "returns": "BdgSolid", "desc": "Return the last solid created in the active builder context.", "insert": "Bdg.last_solid()"},
+		{"category": "Builders", "name": "Bdg.last_face", "sig": "static Bdg.last_face() -> BdgFace", "returns": "BdgFace", "desc": "Return the last face created in the active builder context.", "insert": "Bdg.last_face()"},
+		{"category": "Builders", "name": "Bdg.last_edge", "sig": "static Bdg.last_edge() -> BdgEdge", "returns": "BdgEdge", "desc": "Return the last edge created in the active builder context.", "insert": "Bdg.last_edge()"},
+		{"category": "Builders", "name": "Bdg.last_wire", "sig": "static Bdg.last_wire() -> BdgWire", "returns": "BdgWire", "desc": "Return the last wire created in the active builder context.", "insert": "Bdg.last_wire()"},
+		{"category": "Builders", "name": "Bdg.eval", "sig": "static Bdg.eval(code: String) -> Variant", "returns": "Variant", "desc": "Dynamically compile and execute a GDScript CAD code string, returning the built BdgShape or Variant.", "insert": "Bdg.eval(${0})"},
+		{"category": "Builders", "name": "Bdg.run_cad_builder", "sig": "Bdg.run_cad_builder() -> Variant", "returns": "Variant", "desc": "Method run_cad_builder in class Bdg.", "insert": "Bdg.run_cad_builder()"},
+		{"category": "Builders", "name": "Bdg.locations", "sig": "static Bdg.locations(loc_generator: Variant, block: Callable) -> void", "returns": "void", "desc": "Run a block with an active BdgLocations context (Array of locations, planes, or points).", "insert": "Bdg.locations(${0})"},
+		{"category": "Builders", "name": "Bdg.grid_locations", "sig": "static Bdg.grid_locations(x_spacing: float, y_spacing: float, x_count: int, y_count: int, block: Callable) -> void", "returns": "void", "desc": "Run a block with a 2D rectangular GridLocations context centered at origin.", "insert": "Bdg.grid_locations(${0})"},
+		{"category": "Builders", "name": "Bdg.hex_locations", "sig": "static Bdg.hex_locations(apothem: float, x_count: int, y_count: int, block: Callable) -> void", "returns": "void", "desc": "Run a block with a 2D Hexagonal packing HexLocations context.", "insert": "Bdg.hex_locations(${0})"},
+		{"category": "Builders", "name": "Bdg.polar_locations", "sig": "static Bdg.polar_locations(radius: float, count: int, start_angle: float = 0.0, angular_range: float = 360.0, rotate: bool = true, block: Callable = Callable() -> Variant", "returns": "Variant", "desc": "Run a block with a circular PolarLocations pattern context.", "insert": "Bdg.polar_locations(${0})"},
+		{"category": "Builders", "name": "Bdg.pos", "sig": "static Bdg.pos(x: float, y: float, z: float = 0.0) -> Vector3", "returns": "Vector3", "desc": "Create a position vector (Vector3 shorthand).", "insert": "Bdg.pos(${0})"},
+		{"category": "Builders", "name": "Bdg.rot", "sig": "static Bdg.rot(x_deg: float, y_deg: float, z_deg: float) -> Quaternion", "returns": "Quaternion", "desc": "Create an orientation quaternion from Euler degrees (X, Y, Z).", "insert": "Bdg.rot(${0})"},
+		{"category": "Builders", "name": "Bdg.location", "sig": "static Bdg.location(position: Vector3 = Vector3.ZERO, orientation: Quaternion = Quaternion.IDENTITY) -> BdgLocation", "returns": "BdgLocation", "desc": "Create a 3D Location from position and optional rotation.", "insert": "Bdg.location(${0})"},
+		{"category": "Builders", "name": "Bdg.fuse", "sig": "static Bdg.fuse(a: BdgShape, b: Variant) -> BdgShape", "returns": "BdgShape", "desc": "Fuse (union) shapes: a + b", "insert": "Bdg.fuse(${0})"},
+		{"category": "Builders", "name": "Bdg.cut", "sig": "static Bdg.cut(a: BdgShape, b: Variant) -> BdgShape", "returns": "BdgShape", "desc": "Cut (difference) shapes: a - b", "insert": "Bdg.cut(${0})"},
+		{"category": "Builders", "name": "Bdg.intersect", "sig": "static Bdg.intersect(a: BdgShape, b: Variant) -> BdgShape", "returns": "BdgShape", "desc": "Intersect (common) shapes: a & b", "insert": "Bdg.intersect(${0})"},
+		{"category": "Builders", "name": "Bdg.line", "sig": "static Bdg.line(p1: Vector3, p2: Vector3, mode: int = BdgEnums.Mode.ADD) -> BdgLine", "returns": "BdgLine", "desc": "Straight line segment between two 3D points.", "insert": "Bdg.line(${0})"},
+		{"category": "Builders", "name": "Bdg.polar_line", "sig": "static Bdg.polar_line(p0: Vector3, length: float, angle_deg: float, mode: int = BdgEnums.Mode.ADD) -> BdgPolarLine", "returns": "BdgPolarLine", "desc": "Line defined by start point, length, and polar angle in degrees.", "insert": "Bdg.polar_line(${0})"},
+		{"category": "Builders", "name": "Bdg.polyline", "sig": "static Bdg.polyline(points: Array, close: bool = false, mode: int = BdgEnums.Mode.ADD) -> BdgPolyline", "returns": "BdgPolyline", "desc": "Multi-segment polyline connecting an ordered list of points.", "insert": "Bdg.polyline(${0})"},
+		{"category": "Builders", "name": "Bdg.fillet_polyline", "sig": "static Bdg.fillet_polyline(points: Array, radius: float, close: bool = false, mode: int = BdgEnums.Mode.ADD) -> BdgFilletPolyline", "returns": "BdgFilletPolyline", "desc": "Polyline with automatic corner filleting by a given radius.", "insert": "Bdg.fillet_polyline(${0})"},
+		{"category": "Builders", "name": "Bdg.arc_3pt", "sig": "static Bdg.arc_3pt(p1: Vector3, p2: Vector3, p3: Vector3, mode: int = BdgEnums.Mode.ADD) -> BdgThreePointArc", "returns": "BdgThreePointArc", "desc": "Circular arc passing through three points (start, mid, end).", "insert": "Bdg.arc_3pt(${0})"},
+		{"category": "Builders", "name": "Bdg.center_arc", "sig": "static Bdg.center_arc(center: Vector3, radius: float, start_angle: float, arc_size: float, mode: int = BdgEnums.Mode.ADD) -> BdgCenterArc", "returns": "BdgCenterArc", "desc": "Circular arc defined by center, radius, start angle, and arc size.", "insert": "Bdg.center_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.radius_arc", "sig": "static Bdg.radius_arc(start: Vector3, end: Vector3, radius: float, short_sagitta: bool = true, mode: int = BdgEnums.Mode.ADD) -> BdgRadiusArc", "returns": "BdgRadiusArc", "desc": "Circular arc defined by start, end point, and radius.", "insert": "Bdg.radius_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.sagitta_arc", "sig": "static Bdg.sagitta_arc(start: Vector3, end: Vector3, sagitta: float, mode: int = BdgEnums.Mode.ADD) -> BdgSagittaArc", "returns": "BdgSagittaArc", "desc": "Circular arc defined by start, end point, and sagitta (bulge height).", "insert": "Bdg.sagitta_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.tangential_arc", "sig": "static Bdg.tangential_arc(start: Vector3, tangent: Vector3, radius: float, angle_deg: float, mode: int = BdgEnums.Mode.ADD) -> BdgJernArc", "returns": "BdgJernArc", "desc": "Tangential arc continuing smoothly from an initial tangent direction.", "insert": "Bdg.tangential_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.double_tangent_arc", "sig": "static Bdg.double_tangent_arc(edge1: BdgEdge, edge2: BdgEdge, mode: int = BdgEnums.Mode.ADD) -> BdgDoubleTangentArc", "returns": "BdgDoubleTangentArc", "desc": "Smooth arc connecting two curves with tangency constraints at both ends.", "insert": "Bdg.double_tangent_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.jern_arc", "sig": "static Bdg.jern_arc(start: Vector3, tangent: Vector3, radius: float, arc_size: float, mode: int = BdgEnums.Mode.ADD) -> BdgJernArc", "returns": "BdgJernArc", "desc": "Jern arc tangent to an existing edge or direction vector.", "insert": "Bdg.jern_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.elliptical_center_arc", "sig": "static Bdg.elliptical_center_arc(center: Vector3, x_radius: float, y_radius: float, start_angle: float = 0.0, end_angle: float = 360.0, rotation: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgEllipticalCenterArc", "returns": "BdgEllipticalCenterArc", "desc": "Elliptical arc around a center point with major and minor radii.", "insert": "Bdg.elliptical_center_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.parabolic_center_arc", "sig": "static Bdg.parabolic_center_arc(focal_length: float = 10.0, u_min: float = -10.0, u_max: float = 10.0, plane: BdgPlane = null, mode: int = BdgEnums.Mode.ADD) -> BdgParabolicCenterArc", "returns": "BdgParabolicCenterArc", "desc": "Analytical parabolic arc defined by focal length and parameter limits.", "insert": "Bdg.parabolic_center_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.hyperbolic_center_arc", "sig": "static Bdg.hyperbolic_center_arc(major_radius: float = 10.0, minor_radius: float = 5.0, u_min: float = -1.0, u_max: float = 1.0, plane: BdgPlane = null, mode: int = BdgEnums.Mode.ADD) -> BdgHyperbolicCenterArc", "returns": "BdgHyperbolicCenterArc", "desc": "Analytical hyperbolic arc defined by major/minor radii and parameter limits.", "insert": "Bdg.hyperbolic_center_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.spline", "sig": "static Bdg.spline(points: Array, mode: int = BdgEnums.Mode.ADD) -> BdgSpline", "returns": "BdgSpline", "desc": "Smooth B-Spline curve passing through an array of points.", "insert": "Bdg.spline(${0})"},
+		{"category": "Builders", "name": "Bdg.bspline", "sig": "static Bdg.bspline(points: Array, mode: int = BdgEnums.Mode.ADD) -> BdgSpline", "returns": "BdgSpline", "desc": "Smooth B-Spline curve.", "insert": "Bdg.bspline(${0})"},
+		{"category": "Builders", "name": "Bdg.bezier", "sig": "static Bdg.bezier(control_points: Array, weights: Array = [], mode: int = BdgEnums.Mode.ADD) -> BdgBezier", "returns": "BdgBezier", "desc": "Rational/polynomial Bezier curve with control points and optional weights.", "insert": "Bdg.bezier(${0})"},
+		{"category": "Builders", "name": "Bdg.helix", "sig": "static Bdg.helix(pitch: float, height: float, radius: float, center: Vector3 = Vector3.ZERO, dir: Vector3 = Vector3.UP, angle: float = 0.0, righthanded: bool = true, mode: int = BdgEnums.Mode.ADD) -> BdgHelix", "returns": "BdgHelix", "desc": "3D Helix curve defined by pitch, height, and radius.", "insert": "Bdg.helix(${0})"},
+		{"category": "Builders", "name": "Bdg.airfoil", "sig": "static Bdg.airfoil(naca_code: String = \"2412\", chord_length: float = 100.0, sample_count: int = 100, mode: int = BdgEnums.Mode.ADD) -> BdgAirfoil", "returns": "BdgAirfoil", "desc": "NACA 4-Digit Airfoil curve profile (e.g. \"2412\", \"0012\").", "insert": "Bdg.airfoil(${0})"},
+		{"category": "Builders", "name": "Bdg.blend_curve", "sig": "static Bdg.blend_curve(edge1: BdgEdge, edge2: BdgEdge, tangent_scale: float = 1.0, mode: int = BdgEnums.Mode.ADD) -> BdgBlendCurve", "returns": "BdgBlendCurve", "desc": "G1/G2 Curvature-continuous blend curve bridging two edges.", "insert": "Bdg.blend_curve(${0})"},
+		{"category": "Builders", "name": "Bdg.intersecting_line", "sig": "static Bdg.intersecting_line(start: Vector3, direction: Vector3, target_shape: BdgShape, mode: int = BdgEnums.Mode.ADD) -> BdgIntersectingLine", "returns": "BdgIntersectingLine", "desc": "Ray line intersecting another shape or surface.", "insert": "Bdg.intersecting_line(${0})"},
+		{"category": "Builders", "name": "Bdg.rect", "sig": "static Bdg.rect(width: float, height: float, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgRectangle", "returns": "BdgRectangle", "desc": "Planar rectangle sketch face.", "insert": "Bdg.rect(${0})"},
+		{"category": "Builders", "name": "Bdg.rounded_rect", "sig": "static Bdg.rounded_rect(width: float, height: float, radius: float, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgRectangleRounded", "returns": "BdgRectangleRounded", "desc": "Planar rectangle with filleted corners.", "insert": "Bdg.rounded_rect(${0})"},
+		{"category": "Builders", "name": "Bdg.circle", "sig": "static Bdg.circle(radius: float, arc_size: float = 360.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgCircle", "returns": "BdgCircle", "desc": "Planar circle sketch face.", "insert": "Bdg.circle(${0})"},
+		{"category": "Builders", "name": "Bdg.ellipse", "sig": "static Bdg.ellipse(x_radius: float, y_radius: float, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgEllipse", "returns": "BdgEllipse", "desc": "Planar ellipse sketch face.", "insert": "Bdg.ellipse(${0})"},
+		{"category": "Builders", "name": "Bdg.regular_polygon", "sig": "static Bdg.regular_polygon(radius: float, side_count: int, major_radius: bool = true, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgRegularPolygon", "returns": "BdgRegularPolygon", "desc": "Regular N-gon polygon sketch face.", "insert": "Bdg.regular_polygon(${0})"},
+		{"category": "Builders", "name": "Bdg.polygon", "sig": "static Bdg.polygon(points: Array, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgPolygon", "returns": "BdgPolygon", "desc": "Arbitrary planar polygon face from vertex points.", "insert": "Bdg.polygon(${0})"},
+		{"category": "Builders", "name": "Bdg.triangle", "sig": "static Bdg.triangle(a: float, b: float, c: float, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgTriangle", "returns": "BdgTriangle", "desc": "Planar triangle sketch face.", "insert": "Bdg.triangle(${0})"},
+		{"category": "Builders", "name": "Bdg.trapezoid", "sig": "static Bdg.trapezoid(width: float, height: float, top_width: float, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgTrapezoid", "returns": "BdgTrapezoid", "desc": "Planar trapezoid sketch face.", "insert": "Bdg.trapezoid(${0})"},
+		{"category": "Builders", "name": "Bdg.slot_c2c", "sig": "static Bdg.slot_c2c(distance: float, radius: float, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgSlotCenterToCenter", "returns": "BdgSlotCenterToCenter", "desc": "Stadium slot defined by center-to-center distance and radius.", "insert": "Bdg.slot_c2c(${0})"},
+		{"category": "Builders", "name": "Bdg.slot_cp", "sig": "static Bdg.slot_cp(center: Vector3, point: Vector3, radius: float, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgSlotCenterPoint", "returns": "BdgSlotCenterPoint", "desc": "Stadium slot defined by center point, outer point, and radius.", "insert": "Bdg.slot_cp(${0})"},
+		{"category": "Builders", "name": "Bdg.slot_overall", "sig": "static Bdg.slot_overall(width: float, height: float, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgSlotOverall", "returns": "BdgSlotOverall", "desc": "Stadium slot defined by overall bounding width and height.", "insert": "Bdg.slot_overall(${0})"},
+		{"category": "Builders", "name": "Bdg.slot_arc", "sig": "static Bdg.slot_arc(arc_edge: BdgEdge, radius: float, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgSlotArc", "returns": "BdgSlotArc", "desc": "Curved slot along an arc path.", "insert": "Bdg.slot_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.text", "sig": "static Bdg.text(txt: String, font_size: float = 12.0, font_name: String = \"sans-serif\", font_style: int = BdgEnums.FontStyle.REGULAR, align: Variant = BdgEnums.Align.CENTER, rotation: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgText", "returns": "BdgText", "desc": "2D Text faces generated via OpenCASCADE native BRep font builder.", "insert": "Bdg.text(${0})"},
+		{"category": "Builders", "name": "Bdg.superellipse", "sig": "static Bdg.superellipse(x_radius: float, y_radius: float, exponent: float, count: int = 120, rotation: float = 0.0, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgSuperellipse", "returns": "BdgSuperellipse", "desc": "Lamé curve / squircle superellipse sketch face.", "insert": "Bdg.superellipse(${0})"},
+		{"category": "Builders", "name": "Bdg.box", "sig": "static Bdg.box(length: float, width: float, height: float, rotation: Vector3 = Vector3.ZERO, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgBox", "returns": "BdgBox", "desc": "3D Solid Box primitive.", "insert": "Bdg.box(${0})"},
+		{"category": "Builders", "name": "Bdg.cylinder", "sig": "static Bdg.cylinder(radius: float, height: float, arc_size: float = 360.0, rotation: Vector3 = Vector3.ZERO, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgCylinder", "returns": "BdgCylinder", "desc": "3D Solid Cylinder primitive.", "insert": "Bdg.cylinder(${0})"},
+		{"category": "Builders", "name": "Bdg.sphere", "sig": "static Bdg.sphere(radius: float, arc_size: float = 360.0, rotation: Vector3 = Vector3.ZERO, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgSphere", "returns": "BdgSphere", "desc": "3D Solid Sphere primitive.", "insert": "Bdg.sphere(${0})"},
+		{"category": "Builders", "name": "Bdg.cone", "sig": "static Bdg.cone(radius1: float, radius2: float, height: float, arc_size: float = 360.0, rotation: Vector3 = Vector3.ZERO, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgCone", "returns": "BdgCone", "desc": "3D Solid Cone/Frustum primitive.", "insert": "Bdg.cone(${0})"},
+		{"category": "Builders", "name": "Bdg.torus", "sig": "static Bdg.torus(major_radius: float, minor_radius: float, arc_size: float = 360.0, rotation: Vector3 = Vector3.ZERO, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgTorus", "returns": "BdgTorus", "desc": "3D Solid Torus primitive.", "insert": "Bdg.torus(${0})"},
+		{"category": "Builders", "name": "Bdg.wedge", "sig": "static Bdg.wedge(dx: float, dy: float, dz: float, xmin: float, zmin: float, xmax: float, zmax: float, rotation: Vector3 = Vector3.ZERO, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgWedge", "returns": "BdgWedge", "desc": "3D Right Angular Wedge primitive.", "insert": "Bdg.wedge(${0})"},
+		{"category": "Builders", "name": "Bdg.convex_polyhedron", "sig": "static Bdg.convex_polyhedron(points: Array, rotation: Vector3 = Vector3.ZERO, align: Variant = BdgEnums.Align.CENTER, mode: int = BdgEnums.Mode.ADD) -> BdgConvexPolyhedron", "returns": "BdgConvexPolyhedron", "desc": "3D Convex Polyhedron solid generated from a 3D point cloud.", "insert": "Bdg.convex_polyhedron(${0})"},
+		{"category": "Builders", "name": "Bdg.hole", "sig": "static Bdg.hole(radius: float, depth: float = 100.0, mode: int = BdgEnums.Mode.SUBTRACT) -> BdgHole", "returns": "BdgHole", "desc": "Simple drilled cylindrical hole subtractor.", "insert": "Bdg.hole(${0})"},
+		{"category": "Builders", "name": "Bdg.counter_bore_hole", "sig": "static Bdg.counter_bore_hole(radius: float, depth: float, cb_radius: float, cb_depth: float, mode: int = BdgEnums.Mode.SUBTRACT) -> BdgCounterBoreHole", "returns": "BdgCounterBoreHole", "desc": "Counterbored stepped hole subtractor for socket screws.", "insert": "Bdg.counter_bore_hole(${0})"},
+		{"category": "Builders", "name": "Bdg.counter_sink_hole", "sig": "static Bdg.counter_sink_hole(radius: float, depth: float, cs_radius: float, cs_angle: float = 90.0, mode: int = BdgEnums.Mode.SUBTRACT) -> BdgCounterSinkHole", "returns": "BdgCounterSinkHole", "desc": "Countersunk conical hole subtractor for flathead screws.", "insert": "Bdg.counter_sink_hole(${0})"},
+		{"category": "Builders", "name": "Bdg.hex_bolt", "sig": "static Bdg.hex_bolt(thread_radius: float, length: float, head_width: float = 0.0, head_height: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgHexBolt", "returns": "BdgHexBolt", "desc": "ISO standard Hexagonal Head Bolt solid.", "insert": "Bdg.hex_bolt(${0})"},
+		{"category": "Builders", "name": "Bdg.hex_nut", "sig": "static Bdg.hex_nut(thread_radius: float, width: float = 0.0, height: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgHexNut", "returns": "BdgHexNut", "desc": "ISO standard Hexagonal Nut solid with central threaded bore hole.", "insert": "Bdg.hex_nut(${0})"},
+		{"category": "Builders", "name": "Bdg.socket_head_screw", "sig": "static Bdg.socket_head_screw(thread_radius: float, length: float, head_radius: float = 0.0, head_height: float = 0.0, socket_size: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgSocketHeadCapScrew", "returns": "BdgSocketHeadCapScrew", "desc": "Socket Head Cap Screw (SHCS) solid with hex socket head.", "insert": "Bdg.socket_head_screw(${0})"},
+		{"category": "Builders", "name": "Bdg.add", "sig": "static Bdg.add(objects: Variant, mode: int = BdgEnums.Mode.ADD) -> Variant", "returns": "Variant", "desc": "Add objects to the current builder context.", "insert": "Bdg.add(${0})"},
+		{"category": "Builders", "name": "Bdg.mirror", "sig": "static Bdg.mirror(objects: Variant, about: BdgPlane = null) -> Variant", "returns": "Variant", "desc": "Mirror shapes across a plane (default XY).", "insert": "Bdg.mirror(${0})"},
+		{"category": "Builders", "name": "Bdg.scale", "sig": "static Bdg.scale(objects: Variant, factor: Variant, center: Vector3 = Vector3.ZERO) -> Variant", "returns": "Variant", "desc": "Scale shapes uniformly (by float) or non-uniformly (by Vector3 [sx, sy, sz]).", "insert": "Bdg.scale(${0})"},
+		{"category": "Builders", "name": "Bdg.offset", "sig": "static Bdg.offset(objects: Variant, amount: float, kind: int = 0) -> Variant", "returns": "Variant", "desc": "2D/3D Offset operation.", "insert": "Bdg.offset(${0})"},
+		{"category": "Builders", "name": "Bdg.project", "sig": "static Bdg.project(objects: Variant, target: BdgShape, direction: Vector3 = Vector3.ZERO) -> Array", "returns": "Array", "desc": "Project curves/wires onto a target shape or surface.", "insert": "Bdg.project(${0})"},
+		{"category": "Builders", "name": "Bdg.split", "sig": "static Bdg.split(objects: Variant, bisect_by: Variant, keep: int = BdgEnums.Keep.TOP) -> Variant", "returns": "Variant", "desc": "Split / bisect shapes with a plane or surface (Keep.TOP, Keep.BOTTOM, Keep.BOTH).", "insert": "Bdg.split(${0})"},
+		{"category": "Builders", "name": "Bdg.bounding_box", "sig": "static Bdg.bounding_box(objects: Variant) -> BdgBoundBox", "returns": "BdgBoundBox", "desc": "Compute oriented bounding box of objects.", "insert": "Bdg.bounding_box(${0})"},
+		{"category": "Builders", "name": "Bdg.pack", "sig": "static Bdg.pack(objects: Array, sheet_width: float, sheet_height: float, padding: float = 2.0) -> Array", "returns": "Array", "desc": "2D Sheet metal nesting and bin-packing algorithm.", "insert": "Bdg.pack(${0})"},
+		{"category": "Builders", "name": "Bdg.make_face", "sig": "static Bdg.make_face(wires_or_edges: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Make a planar face from closed wires or edges.", "insert": "Bdg.make_face(${0})"},
+		{"category": "Builders", "name": "Bdg.make_hull", "sig": "static Bdg.make_hull(points_or_shapes: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "2D Convex Hull face from a set of points or shapes.", "insert": "Bdg.make_hull(${0})"},
+		{"category": "Builders", "name": "Bdg.trace", "sig": "static Bdg.trace(wire: BdgWire, distance: float, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Trace a wire with line thickness to generate a planar ribbon face.", "insert": "Bdg.trace(${0})"},
+		{"category": "Builders", "name": "Bdg.full_round", "sig": "static Bdg.full_round(sketch_or_face: Variant, edge1: BdgEdge, edge2: BdgEdge, radius: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgFace", "returns": "BdgFace", "desc": "Full tangent rounding between two edges in a sketch.", "insert": "Bdg.full_round(${0})"},
+		{"category": "Builders", "name": "Bdg.extrude", "sig": "static Bdg.extrude(to_extrude: Variant, amount: float, dir: Vector3 = Vector3.ZERO, both: bool = false, taper: float = 0.0, mode: int = BdgEnums.Mode.ADD) -> BdgPart", "returns": "BdgPart", "desc": "Extrude a face along its normal or direction vector, with optional draft taper and both-directions.", "insert": "Bdg.extrude(${0})"},
+		{"category": "Builders", "name": "Bdg.revolve", "sig": "static Bdg.revolve(to_revolve: Variant, angle: float, axis: BdgAxis = null, mode: int = BdgEnums.Mode.ADD) -> BdgPart", "returns": "BdgPart", "desc": "Revolve a planar face around an axis (default Z).", "insert": "Bdg.revolve(${0})"},
+		{"category": "Builders", "name": "Bdg.sweep", "sig": "static Bdg.sweep(profile: Variant, path: Variant, mode: int = BdgEnums.Mode.ADD) -> BdgShape", "returns": "BdgShape", "desc": "Sweep a profile face along a 3D wire or curve path.", "insert": "Bdg.sweep(${0})"},
+		{"category": "Builders", "name": "Bdg.loft", "sig": "static Bdg.loft(objs: Array, ruled: bool = false, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Loft solid through a sequence of planar sections.", "insert": "Bdg.loft(${0})"},
+		{"category": "Builders", "name": "Bdg.fillet", "sig": "static Bdg.fillet(objects: Variant, radius: float) -> BdgShape", "returns": "BdgShape", "desc": "Fillet 3D edges or vertices of a shape with a given radius.", "insert": "Bdg.fillet(${0})"},
+		{"category": "Builders", "name": "Bdg.chamfer", "sig": "static Bdg.chamfer(objects: Variant, length: float, length2: float = 0.0) -> BdgShape", "returns": "BdgShape", "desc": "Chamfer 3D edges of a shape with a given bevel length.", "insert": "Bdg.chamfer(${0})"},
+		{"category": "Builders", "name": "Bdg.section", "sig": "static Bdg.section(shape: BdgShape, plane: BdgPlane = null) -> Array", "returns": "Array", "desc": "Section a 3D shape with a cutting plane, returning intersection edges/wires.", "insert": "Bdg.section(${0})"},
+		{"category": "Builders", "name": "Bdg.thicken", "sig": "static Bdg.thicken(shape: BdgShape, amount: float, mode: int = BdgEnums.Mode.ADD) -> BdgShape", "returns": "BdgShape", "desc": "Thicken a 2D face/wire into a 3D shell or solid.", "insert": "Bdg.thicken(${0})"},
+		{"category": "Builders", "name": "Bdg.hollow", "sig": "static Bdg.hollow(solid: BdgSolid, faces_to_remove: Array, thickness: float, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Hollow a solid to create a thin-walled shell/cavity.", "insert": "Bdg.hollow(${0})"},
+		{"category": "Builders", "name": "Bdg.draft", "sig": "static Bdg.draft(solid: BdgSolid, faces: Array, angle_deg: float, neutral_plane: BdgPlane, pull_dir: Vector3 = Vector3.ZERO, mode: int = BdgEnums.Mode.ADD) -> BdgSolid", "returns": "BdgSolid", "desc": "Apply draft angle taper to mold/casting faces.", "insert": "Bdg.draft(${0})"},
+		{"category": "Builders", "name": "Bdg.assembly", "sig": "static Bdg.assembly(comp_shape: BdgShape = null, label: String = \"\", loc: BdgLocation = null, color: Color = Color.WHITE) -> BdgAssembly", "returns": "BdgAssembly", "desc": "Create a hierarchical CAD Assembly component.", "insert": "Bdg.assembly(${0})"},
+		{"category": "Builders", "name": "Bdg.rigid_joint", "sig": "static Bdg.rigid_joint(parent_loc: BdgLocation, child_loc: BdgLocation, label: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a Rigid (fixed) kinematic assembly joint.", "insert": "Bdg.rigid_joint(${0})"},
+		{"category": "Builders", "name": "Bdg.revolute_joint", "sig": "static Bdg.revolute_joint(parent_loc: BdgLocation, child_loc: BdgLocation, axis: BdgAxis, min_ang: float = -180.0, max_ang: float = 180.0, label: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a Revolute (rotational) kinematic assembly joint.", "insert": "Bdg.revolute_joint(${0})"},
+		{"category": "Builders", "name": "Bdg.linear_joint", "sig": "static Bdg.linear_joint(parent_loc: BdgLocation, child_loc: BdgLocation, axis: BdgAxis, min_dist: float = 0.0, max_dist: float = 100.0, label: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a Linear (prismatic sliding) kinematic assembly joint.", "insert": "Bdg.linear_joint(${0})"},
+		{"category": "Builders", "name": "Bdg.technical_drawing", "sig": "static Bdg.technical_drawing(shape: BdgShape = null, width: float = 297.0, height: float = 210.0, scale: float = 1.0, title: String = \"Part Drawing\", author: String = \"Antigravity\") -> BdgTechnicalDrawing", "returns": "BdgTechnicalDrawing", "desc": "Create a multi-view orthographic technical drawing sheet.", "insert": "Bdg.technical_drawing(${0})"},
+		{"category": "Builders", "name": "Bdg.dimension_line", "sig": "static Bdg.dimension_line(start_point: Vector3, end_point: Vector3, offset: float = 10.0, text: String = \"\", arrow_size: float = 2.5) -> BdgDimensionLine", "returns": "BdgDimensionLine", "desc": "Create a 2D dimension line annotation with witness lines and arrowheads.", "insert": "Bdg.dimension_line(${0})"},
+		{"category": "Builders", "name": "Bdg.export_step", "sig": "static Bdg.export_step(shape: BdgShape, path: String) -> bool", "returns": "bool", "desc": "Export shape or assembly to STEP AP214 format.", "insert": "Bdg.export_step(${0})"},
+		{"category": "Builders", "name": "Bdg.export_stl", "sig": "static Bdg.export_stl(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export shape or assembly to ASCII STL format.", "insert": "Bdg.export_stl(${0})"},
+		{"category": "Builders", "name": "Bdg.export_stl_binary", "sig": "static Bdg.export_stl_binary(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export shape or assembly to binary STL format.", "insert": "Bdg.export_stl_binary(${0})"},
+		{"category": "Builders", "name": "Bdg.export_brep", "sig": "static Bdg.export_brep(shape: BdgShape, path: String) -> bool", "returns": "bool", "desc": "Export shape to native OpenCASCADE BREP format.", "insert": "Bdg.export_brep(${0})"},
+		{"category": "Builders", "name": "Bdg.export_svg", "sig": "static Bdg.export_svg(shape: BdgShape, path: String, plane: BdgPlane = null, scale: float = 1.0) -> bool", "returns": "bool", "desc": "Export 2D contours of a shape to vector SVG format.", "insert": "Bdg.export_svg(${0})"},
+		{"category": "Builders", "name": "Bdg.export_dxf", "sig": "static Bdg.export_dxf(shape: BdgShape, path: String, plane: BdgPlane = null) -> bool", "returns": "bool", "desc": "Export 2D contours of a shape to AutoCAD DXF format.", "insert": "Bdg.export_dxf(${0})"},
+		{"category": "Builders", "name": "Bdg.export_obj", "sig": "static Bdg.export_obj(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export shape mesh to Wavefront OBJ format.", "insert": "Bdg.export_obj(${0})"},
+		{"category": "Builders", "name": "Bdg.export_ply", "sig": "static Bdg.export_ply(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export shape mesh to Stanford PLY format.", "insert": "Bdg.export_ply(${0})"},
+		{"category": "Builders", "name": "Bdg.export_gltf", "sig": "static Bdg.export_gltf(shape: BdgShape, path: String, tolerance: float = 0.1, angular_tolerance: float = 12.0) -> bool", "returns": "bool", "desc": "Export shape mesh to standard GLTF 2.0 format.", "insert": "Bdg.export_gltf(${0})"},
+		{"category": "Builders", "name": "Bdg.import_step", "sig": "static Bdg.import_step(path: String) -> BdgShape", "returns": "BdgShape", "desc": "Import STEP AP214 file into BRep CAD shape with assembly hierarchy.", "insert": "Bdg.import_step(${0})"},
+		{"category": "Builders", "name": "Bdg.import_stl", "sig": "static Bdg.import_stl(path: String) -> BdgShape", "returns": "BdgShape", "desc": "Import STL mesh file into reference face.", "insert": "Bdg.import_stl(${0})"},
+		{"category": "Builders", "name": "Bdg.import_brep", "sig": "static Bdg.import_brep(path: String) -> BdgShape", "returns": "BdgShape", "desc": "Import native OpenCASCADE BREP file.", "insert": "Bdg.import_brep(${0})"},
+		{"category": "Builders", "name": "Bdg.import_svg", "sig": "static Bdg.import_svg(path: String) -> Array[BdgWire]", "returns": "Array[BdgWire]", "desc": "Import 2D curves/wires from an SVG vector drawing.", "insert": "Bdg.import_svg(${0})"},
+		{"category": "Builders", "name": "Bdg.import_dxf", "sig": "static Bdg.import_dxf(path: String) -> Array[BdgWire]", "returns": "Array[BdgWire]", "desc": "Import 2D curves/wires from an AutoCAD DXF drafting file.", "insert": "Bdg.import_dxf(${0})"},
+		{"category": "Builders", "name": "Bdg.polar", "sig": "static Bdg.polar(radius: float, angle_deg: float) -> Vector3", "returns": "Vector3", "desc": "Create 2D polar vector from radius and angle in degrees.", "insert": "Bdg.polar(${0})"},
+		{"category": "Builders", "name": "Bdg.delta", "sig": "static Bdg.delta(dx: float, dy: float, dz: float = 0.0) -> Vector3", "returns": "Vector3", "desc": "Delta displacement vector shorthand.", "insert": "Bdg.delta(${0})"},
+		{"category": "Builders", "name": "Bdg.vertices", "sig": "static Bdg.vertices(shape: BdgShape) -> Array[BdgVertex]", "returns": "Array[BdgVertex]", "desc": "Return all vertices of a shape.", "insert": "Bdg.vertices(${0})"},
+		{"category": "Builders", "name": "Bdg.edges", "sig": "static Bdg.edges(shape: BdgShape) -> Array[BdgEdge]", "returns": "Array[BdgEdge]", "desc": "Return all edges of a shape.", "insert": "Bdg.edges(${0})"},
+		{"category": "Builders", "name": "Bdg.wires", "sig": "static Bdg.wires(shape: BdgShape) -> Array[BdgWire]", "returns": "Array[BdgWire]", "desc": "Return all wires of a shape.", "insert": "Bdg.wires(${0})"},
+		{"category": "Builders", "name": "Bdg.faces", "sig": "static Bdg.faces(shape: BdgShape) -> Array[BdgFace]", "returns": "Array[BdgFace]", "desc": "Return all faces of a shape.", "insert": "Bdg.faces(${0})"},
+		{"category": "Builders", "name": "Bdg.solids", "sig": "static Bdg.solids(shape: BdgShape) -> Array[BdgSolid]", "returns": "Array[BdgSolid]", "desc": "Return all solids of a shape.", "insert": "Bdg.solids(${0})"},
+		{"category": "Builders", "name": "Bdg.edges_to_wires", "sig": "static Bdg.edges_to_wires(edge_list: Array) -> Array[BdgWire]", "returns": "Array[BdgWire]", "desc": "Combine an array of edges into closed or continuous wires.", "insert": "Bdg.edges_to_wires(${0})"},
+		{"category": "Builders", "name": "Bdg.make_box", "sig": "static Bdg.make_box(length: float, width: float, height: float, plane: BdgPlane = null) -> BdgSolid", "returns": "BdgSolid", "desc": "Box solid with its base corner at the plane origin (raw solid, not a PartObject).", "insert": "Bdg.make_box(${0})"},
+		{"category": "Builders", "name": "Bdg.make_cylinder", "sig": "static Bdg.make_cylinder(radius: float, height: float, plane: BdgPlane = null, angle: float = 360.0) -> BdgSolid", "returns": "BdgSolid", "desc": "Cylinder solid with base center at the plane origin.", "insert": "Bdg.make_cylinder(${0})"},
+		{"category": "Builders", "name": "Bdg.make_sphere", "sig": "static Bdg.make_sphere(radius: float, plane: BdgPlane = null) -> BdgSolid", "returns": "BdgSolid", "desc": "Sphere solid centered at the plane origin.", "insert": "Bdg.make_sphere(${0})"},
+		{"category": "Builders", "name": "Bdg.make_loft", "sig": "static Bdg.make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -> BdgShape", "returns": "BdgShape", "desc": "Loft solid through an ordered array of wire sections (or apex vertices).", "insert": "Bdg.make_loft(${0})"},
+		{"category": "Builders", "name": "Bdg.make_rect", "sig": "static Bdg.make_rect(width: float, height: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "Planar rectangle face centered on the given plane (default XY).", "insert": "Bdg.make_rect(${0})"},
+		{"category": "Builders", "name": "Bdg.make_rounded_rect", "sig": "static Bdg.make_rounded_rect(width: float, height: float, radius: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "Planar rounded-corner rectangle face centered on the given plane.", "insert": "Bdg.make_rounded_rect(${0})"},
+		{"category": "Builders", "name": "Bdg.make_circle", "sig": "static Bdg.make_circle(radius: float, plane: BdgPlane = null) -> BdgFace", "returns": "BdgFace", "desc": "Planar circle face centered on the given plane.", "insert": "Bdg.make_circle(${0})"},
+		{"category": "Builders", "name": "Bdg.make_slot", "sig": "static Bdg.make_slot(length: float, width: float, rotation_deg: float = 0.0) -> BdgFace", "returns": "BdgFace", "desc": "Stadium-slot face with overall length and width, optionally rotated in degrees.", "insert": "Bdg.make_slot(${0})"},
+		{"category": "Builders", "name": "Bdg.make_from_wires", "sig": "static Bdg.make_from_wires(outer_wire: BdgWire, inner_wires: Array = []) -> BdgFace", "returns": "BdgFace", "desc": "Face built from an outer boundary wire and optional inner hole wires.", "insert": "Bdg.make_from_wires(${0})"},
+		{"category": "Builders", "name": "Bdg.make_wire", "sig": "static Bdg.make_wire(edges: Array) -> BdgWire", "returns": "BdgWire", "desc": "Wire built from an array of edges, wires, or 1D shapes.", "insert": "Bdg.make_wire(${0})"},
+		{"category": "Builders", "name": "Bdg.make_polygon", "sig": "static Bdg.make_polygon(points: Array, close: bool = true) -> BdgWire", "returns": "BdgWire", "desc": "Polygon wire from an ordered list of points (closed by default).", "insert": "Bdg.make_polygon(${0})"},
+		{"category": "Builders", "name": "Bdg.make_rect_wire", "sig": "static Bdg.make_rect_wire(width: float, height: float, plane: BdgPlane = null) -> BdgWire", "returns": "BdgWire", "desc": "Rectangle wire centered on the given plane (1D boundary, not a face).", "insert": "Bdg.make_rect_wire(${0})"},
+		{"category": "Builders", "name": "Bdg.make_line", "sig": "static Bdg.make_line(point1: Vector3, point2: Vector3) -> BdgEdge", "returns": "BdgEdge", "desc": "Straight line edge between two points.", "insert": "Bdg.make_line(${0})"},
+		{"category": "Builders", "name": "Bdg.make_radius_arc", "sig": "static Bdg.make_radius_arc(start_point: Vector3, end_point: Vector3, radius: float, short_sagitta: bool = true) -> BdgEdge", "returns": "BdgEdge", "desc": "Circular arc edge between two points with a given radius.", "insert": "Bdg.make_radius_arc(${0})"},
+		{"category": "Builders", "name": "Bdg.make_spline", "sig": "static Bdg.make_spline(points: Array, tangents: Array = [], scale: bool = true) -> BdgEdge", "returns": "BdgEdge", "desc": "B-Spline edge through points with optional start/end tangents.", "insert": "Bdg.make_spline(${0})"},
+		{"category": "Builders", "name": "Bdg.make_compound", "sig": "static Bdg.make_compound(shapes: Array) -> BdgCompound", "returns": "BdgCompound", "desc": "Compound of the given shapes.", "insert": "Bdg.make_compound(${0})"},
+		{"category": "Builders", "name": "Bdg.make_pipe_shell", "sig": "static Bdg.make_pipe_shell(path_wire: BdgWire, sections: Array, as_solid: bool = true) -> BdgShape", "returns": "BdgShape", "desc": "Swept shell/solid along a path wire with cross-section faces.", "insert": "Bdg.make_pipe_shell(${0})"},
+		{"category": "Builders", "name": "Bdg.axis", "sig": "static Bdg.axis(origin: Vector3, direction: Vector3) -> BdgAxis", "returns": "BdgAxis", "desc": "Axis through an origin point in the given direction.", "insert": "Bdg.axis(${0})"},
+		{"category": "Builders", "name": "Bdg.axis_x", "sig": "static Bdg.axis_x() -> BdgAxis", "returns": "BdgAxis", "desc": "World X axis.", "insert": "Bdg.axis_x()"},
+		{"category": "Builders", "name": "Bdg.axis_y", "sig": "static Bdg.axis_y() -> BdgAxis", "returns": "BdgAxis", "desc": "World Y axis.", "insert": "Bdg.axis_y()"},
+		{"category": "Builders", "name": "Bdg.axis_z", "sig": "static Bdg.axis_z() -> BdgAxis", "returns": "BdgAxis", "desc": "World Z axis.", "insert": "Bdg.axis_z()"},
+		{"category": "Builders", "name": "Bdg.grid_locations_list", "sig": "static Bdg.grid_locations_list(x_spacing: float, y_spacing: float, x_count: int, y_count: int) -> Array", "returns": "Array", "desc": "Rectangular grid pattern locations (Array of BdgLocation), centered at origin.", "insert": "Bdg.grid_locations_list(${0})"},
+		{"category": "Builders", "name": "Bdg.hex_locations_list", "sig": "static Bdg.hex_locations_list(apothem: float, x_count: int, y_count: int) -> Array", "returns": "Array", "desc": "Hexagonal packing pattern locations (Array of BdgLocation), centered at origin.", "insert": "Bdg.hex_locations_list(${0})"},
+		{"category": "Builders", "name": "Bdg.shape_list", "sig": "static Bdg.shape_list(shapes: Array) -> BdgShapeList", "returns": "BdgShapeList", "desc": "Shape list wrapper around an array of shapes.", "insert": "Bdg.shape_list(${0})"},
+		{"category": "Builders", "name": "Bdg.sort_by", "sig": "static Bdg.sort_by(shape_list: BdgShapeList, sort_by: Variant, reverse: bool = false) -> BdgShapeList", "returns": "BdgShapeList", "desc": "Sort a shape list by a callable key, BdgAxis, or BdgEnums.SortBy criterion.", "insert": "Bdg.sort_by(${0})"},
+		{"category": "Builders", "name": "Bdg.at", "sig": "static Bdg.at(shape_list: BdgShapeList, index: int) -> BdgShape", "returns": "BdgShape", "desc": "Index into a shape list (negative indexes from the end).", "insert": "Bdg.at(${0})"},
+		{"category": "Builders", "name": "Bdg.translate", "sig": "static Bdg.translate(shape: BdgShape, v: Vector3) -> BdgShape", "returns": "BdgShape", "desc": "Translate a shape by a displacement vector.", "insert": "Bdg.translate(${0})"},
+		{"category": "Builders", "name": "Bdg.scaled", "sig": "static Bdg.scaled(shape: BdgShape, factor: Variant, center: Vector3 = Vector3.ZERO) -> BdgShape", "returns": "BdgShape", "desc": "Scale a shape about a center (uniform float factor or per-axis Vector3 factor), returning a copy.", "insert": "Bdg.scaled(${0})"},
+		{"category": "Builders", "name": "Bdg.rotate", "sig": "static Bdg.rotate(shape: BdgShape, axis: BdgAxis, angle_deg: float) -> BdgShape", "returns": "BdgShape", "desc": "Rotate a shape about an axis by an angle in degrees.", "insert": "Bdg.rotate(${0})"},
+		{"category": "Builders", "name": "Bdg.move", "sig": "static Bdg.move(shape: BdgShape, loc: BdgLocation) -> BdgShape", "returns": "BdgShape", "desc": "Move a shape to a location (position + orientation).", "insert": "Bdg.move(${0})"},
+		{"category": "Builders", "name": "Bdg.clean", "sig": "static Bdg.clean(shape: BdgShape) -> BdgShape", "returns": "BdgShape", "desc": "Clean / heal a shape (remove nulls, fix tolerances, reorder).", "insert": "Bdg.clean(${0})"},
+		{"category": "Builders", "name": "Bdg.center", "sig": "static Bdg.center(shape: BdgShape) -> Vector3", "returns": "Vector3", "desc": "Centroid of a shape.", "insert": "Bdg.center(${0})"},
+		{"category": "Builders", "name": "Bdg.geom_type", "sig": "static Bdg.geom_type(shape: BdgShape) -> int", "returns": "int", "desc": "Geometric type enum value of a shape (Bdg.GeomType.LINE, CIRCLE, PLANE, ...).", "insert": "Bdg.geom_type(${0})"},
+		{"category": "Builders", "name": "Bdg.to_plane", "sig": "static Bdg.to_plane(face: BdgFace) -> BdgPlane", "returns": "BdgPlane", "desc": "Base plane of a planar face.", "insert": "Bdg.to_plane(${0})"},
+		{"category": "Builders", "name": "Bdg.length", "sig": "static Bdg.length(edge: BdgMixin1D) -> float", "returns": "float", "desc": "Length of a 1D edge or wire.", "insert": "Bdg.length(${0})"},
+		{"category": "Builders", "name": "Bdg.param_at_distance", "sig": "static Bdg.param_at_distance(edge: BdgMixin1D, dist: float) -> float", "returns": "float", "desc": "Parameter value (u) at a given distance along a 1D edge/wire.", "insert": "Bdg.param_at_distance(${0})"},
+		{"category": "Builders", "name": "Bdg.position_at", "sig": "static Bdg.position_at(edge: BdgMixin1D, position: float) -> Vector3", "returns": "Vector3", "desc": "Point position at parameter value u along a 1D edge/wire.", "insert": "Bdg.position_at(${0})"},
+		{"category": "Builders", "name": "Bdg.tangent_at", "sig": "static Bdg.tangent_at(edge: BdgMixin1D, position: float) -> Vector3", "returns": "Vector3", "desc": "Tangent direction vector at parameter value u along a 1D edge/wire.", "insert": "Bdg.tangent_at(${0})"},
+		{"category": "Builders", "name": "Bdg.normal_at", "sig": "static Bdg.normal_at(edge: BdgMixin1D, position: float) -> Vector3", "returns": "Vector3", "desc": "Normal direction vector at parameter value u along a 1D edge/wire.", "insert": "Bdg.normal_at(${0})"},
+		{"category": "Builders", "name": "Bdg.offset_shape", "sig": "static Bdg.offset_shape(shape: BdgShape, amount: float, openings: Array = []) -> BdgShape", "returns": "BdgShape", "desc": "Solid offset / shell operation (negative amount shells inward).", "insert": "Bdg.offset_shape(${0})"},
+		{"category": "Builders", "name": "Bdg.fillet_edges", "sig": "static Bdg.fillet_edges(shape: BdgShape, radius: float, edge_list: Array = []) -> BdgShape", "returns": "BdgShape", "desc": "Fillet specific edges of a shape with a given radius.", "insert": "Bdg.fillet_edges(${0})"},
+		{"category": "Builders", "name": "Bdg.extrude_vec", "sig": "static Bdg.extrude_vec(shape: BdgShape, direction: Vector3) -> BdgShape", "returns": "BdgShape", "desc": "Extrude a face by a full 3D direction vector (magnitude = distance).", "insert": "Bdg.extrude_vec(${0})"},
+		{"category": "Builders", "name": "Bdg.revolve_axis", "sig": "static Bdg.revolve_axis(shape: BdgShape, angle_deg: float, axis: BdgAxis = BdgAxis.Z) -> BdgShape", "returns": "BdgShape", "desc": "Revolve a face about an axis by an angle in degrees (raw result, not wrapped).", "insert": "Bdg.revolve_axis(${0})"},
+		{"category": "Builders", "name": "Bdg.ball_joint", "sig": "static Bdg.ball_joint(parent_loc: BdgLocation, child_loc: BdgLocation, label: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a Ball (spherical 3-DOF rotation) kinematic joint.", "insert": "Bdg.ball_joint(${0})"},
+		{"category": "Builders", "name": "Bdg.cylindrical_joint", "sig": "static Bdg.cylindrical_joint(parent_loc: BdgLocation, child_loc: BdgLocation, axis: BdgAxis, label: String = \"\") -> BdgJoint", "returns": "BdgJoint", "desc": "Create a Cylindrical (1 rotation + 1 translation) kinematic joint.", "insert": "Bdg.cylindrical_joint(${0})"},
+		{"category": "Builders", "name": "Bdg.vector", "sig": "static Bdg.vector(val: Variant) -> Vector3", "returns": "Vector3", "desc": "Helper vector constructor / converter", "insert": "Bdg.vector(${0})"},
+		{"category": "Builders", "name": "Bdg.compounds", "sig": "static Bdg.compounds(shape: Variant) -> BdgShapeList", "returns": "BdgShapeList", "desc": "Return compounds of shape or shape list", "insert": "Bdg.compounds(${0})"},
+		{"category": "Builders", "name": "Bdg.export_to_pcbway", "sig": "static Bdg.export_to_pcbway(shape: BdgShape, path: String) -> bool", "returns": "bool", "desc": "Export model as ZIP package for PCBWay quote", "insert": "Bdg.export_to_pcbway(${0})"},
+		{"category": "Builders", "name": "Bdg.import_svg_document", "sig": "static Bdg.import_svg_document(path: String) -> Dictionary", "returns": "Dictionary", "desc": "Import full SVG document metadata along with wires", "insert": "Bdg.import_svg_document(${0})"},
+		{"category": "Builders", "name": "Bdg.import_svg_as_buildline_code", "sig": "static Bdg.import_svg_as_buildline_code(path: String) -> String", "returns": "String", "desc": "Import SVG path and convert to executable Bdg.build_line GDScript code", "insert": "Bdg.import_svg_as_buildline_code(${0})"},
+		{"category": "Objects", "name": "BdgDimensionLine.to_wires", "sig": "BdgDimensionLine.to_wires() -> Array[BdgWire]", "returns": "Array[BdgWire]", "desc": "Generate 2D CAD wires for the dimension line annotation (witness lines + dim line)", "insert": "BdgDimensionLine.to_wires()"},
+		{"category": "Objects", "name": "BdgTechnicalDrawing.add_dimension", "sig": "BdgTechnicalDrawing.add_dimension(dim: BdgDimensionLine) -> void", "returns": "void", "desc": "Add a dimension annotation", "insert": "BdgTechnicalDrawing.add_dimension(${0})"},
+		{"category": "Objects", "name": "BdgTechnicalDrawing.to_compound", "sig": "BdgTechnicalDrawing.to_compound() -> BdgCompound", "returns": "BdgCompound", "desc": "Generate drawing as a single BdgCompound containing sheet borders, title block, views, and dimensions.", "insert": "BdgTechnicalDrawing.to_compound()"},
+		{"category": "Objects", "name": "BdgTechnicalDrawing.export_svg", "sig": "BdgTechnicalDrawing.export_svg(path: String) -> bool", "returns": "bool", "desc": "Export technical drawing as 2D SVG", "insert": "BdgTechnicalDrawing.export_svg(${0})"},
+		{"category": "Objects", "name": "BdgTechnicalDrawing.export_dxf", "sig": "BdgTechnicalDrawing.export_dxf(path: String) -> bool", "returns": "bool", "desc": "Export technical drawing as 2D DXF", "insert": "BdgTechnicalDrawing.export_dxf(${0})"}
 	]
-
 	_docs_by_name.clear()
-	for doc in _docs_cache:
-		var n: String = doc["name"]
-		_docs_by_name[n] = doc
-		if n.begins_with("Bdg."):
-			_docs_by_name[n.substr(4)] = doc
-
-static func get_categories() -> Array[String]:
-	return [
-		"All",
-		"Builders",
-		"Patterns",
-		"3D Solids",
-		"2D Sketches",
-		"1D Curves",
-		"Operations",
-		"Drafting",
-		"Topology",
-		"I/O",
-		"Assemblies",
-		"Constants"
-	]
+	for item in _docs_cache:
+		var n: String = item.get("name", "")
+		if not n.is_empty():
+			_docs_by_name[n] = item
+			if n.begins_with("Bdg."):
+				_docs_by_name[n.substr(4)] = item

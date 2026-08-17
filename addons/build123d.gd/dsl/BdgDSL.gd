@@ -903,3 +903,28 @@ static func ball_joint(parent_loc: BdgLocation, child_loc: BdgLocation, label: S
 static func cylindrical_joint(parent_loc: BdgLocation, child_loc: BdgLocation, axis: BdgAxis, label: String = "") -> BdgJoint:
 	return BdgJoint.new(BdgJoint.Type.CYLINDRICAL, label, parent_loc, child_loc, axis)
 
+## Helper vector constructor / converter
+static func vector(val: Variant) -> Vector3:
+	return BdgVector.to_vector3(val)
+
+## Return compounds of shape or shape list
+static func compounds(shape: Variant) -> BdgShapeList:
+	if shape is BdgShape: return shape.compounds()
+	elif shape is BdgShapeList: return shape.compounds()
+	return BdgShapeList.new()
+
+## Export model as ZIP package for PCBWay quote
+static func export_to_pcbway(shape: BdgShape, path: String) -> bool:
+	return BdgIO.export_to_pcbway(shape, path)
+
+## Import full SVG document metadata along with wires
+static func import_svg_document(path: String) -> Dictionary:
+	return BdgIO.import_svg_document(path)
+
+## Import SVG path and convert to executable Bdg.build_line GDScript code
+static func import_svg_as_buildline_code(path: String) -> String:
+	return BdgIO.import_svg_as_buildline_code(path)
+
+
+
+

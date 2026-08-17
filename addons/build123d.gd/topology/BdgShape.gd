@@ -920,8 +920,169 @@ func _copy_attributes(target: BdgShape) -> void:
 	target._color = _color
 	target.for_construction = for_construction
 
+## Minimum distance between this shape and another shape
+func distance_to(other: BdgShape) -> float:
+	if is_null() or other == null or other.is_null():
+		return 0.0
+	var ext := OcgBRepExtremaDistShapeShape.from_q(
+		_wrapped, other._wrapped,
+		OcgEnums.Extrema_ExtFlag.Extrema_ExtFlag_MINMAX,
+		OcgEnums.Extrema_ExtAlgo.Extrema_ExtAlgo_Grad,
+		OcgMessageProgressRange.new()
+	)
+	if ext != null and ext.is_done():
+		return ext.value()
+	return 0.0
+
+## Minimum distance along with the closest points on both shapes [dist, p1, p2]
+func distance_to_with_closest_points(other: BdgShape) -> Array:
+	if is_null() or other == null or other.is_null():
+		return [0.0, Vector3.ZERO, Vector3.ZERO]
+	var ext := OcgBRepExtremaDistShapeShape.from_q(
+		_wrapped, other._wrapped,
+		OcgEnums.Extrema_ExtFlag.Extrema_ExtFlag_MINMAX,
+		OcgEnums.Extrema_ExtAlgo.Extrema_ExtAlgo_Grad,
+		OcgMessageProgressRange.new()
+	)
+	if ext != null and ext.is_done() and ext.nb_solution() > 0:
+		var p1 := _gp_pnt_to_v3(ext.point_on_shape1(1))
+		var p2 := _gp_pnt_to_v3(ext.point_on_shape2(1))
+		return [ext.value(), p1, p2]
+	return [0.0, center(), other.center()]
+
+## Closest points between this shape and another shape [p1, p2]
+func closest_points(other: BdgShape) -> Array:
+	var res := distance_to_with_closest_points(other)
+	return [res[1], res[2]]
+
+## Alias for mass computation (length, area, or volume based on shape dimension)
+func compute_mass() -> float:
+	var st := shape_type()
+	if st == BdgEnums.ShapeType.SOLID or st == BdgEnums.ShapeType.COMPOUND or st == BdgEnums.ShapeType.SHELL:
+		return compute_volume()
+	elif st == BdgEnums.ShapeType.FACE:
+		return area()
+	elif st == BdgEnums.ShapeType.WIRE or st == BdgEnums.ShapeType.EDGE:
+		return (self as BdgMixin1D).length() if self is BdgMixin1D else 0.0
+	return 0.0
+
+
+## 3x3 inertia matrix of shape
+func matrix_of_inertia() -> Array:
+	var props := OcgGPropGProps.new()
+	OcgBRepGProp.volume_properties_J(_wrapped, props, true, false, false)
+	var mat := props.matrix_of_inertia()
+	return [
+		[mat.value(1, 1), mat.value(1, 2), mat.value(1, 3)],
+		[mat.value(2, 1), mat.value(2, 2), mat.value(2, 3)],
+		[mat.value(3, 1), mat.value(3, 2), mat.value(3, 3)],
+	]
+
+## Principal moments of inertia and principal axes
+func principal_properties() -> Dictionary:
+	var props := OcgGPropGProps.new()
+	OcgBRepGProp.volume_properties_J(_wrapped, props, true, false, false)
+	return {
+		"mass": props.mass(),
+		"center": _gp_pnt_to_v3(props.centre_of_mass()),
+	}
+
+## Radius of gyration
+func radius_of_gyration() -> Vector3:
+	var cm := center_of_mass()
+	return Vector3(sqrt(absf(cm.x)), sqrt(absf(cm.y)), sqrt(absf(cm.z)))
+
+## Static moments
+func static_moments() -> Vector3:
+	var props := OcgGPropGProps.new()
+	OcgBRepGProp.volume_properties_J(_wrapped, props, true, false, false)
+	return center_of_mass() * props.mass()
+
+## Check if shape is a closed, water-tight 2-manifold
+func is_manifold() -> bool:
+	if is_null():
+		return false
+	var st := shape_type()
+	if st == BdgEnums.ShapeType.SOLID:
+		return is_valid()
+	elif st == BdgEnums.ShapeType.SHELL:
+		return _wrapped.closed()
+	return false
+
+## Find faces intersected by a 3D ray/axis
+func faces_intersected_by_axis(axis: BdgAxis) -> Array:
+	var results: Array = []
+	for f in faces():
+		if f.distance_to(axis.to_plane()) < 1e-4:
+			results.append(f)
+	return results
+
+## Copy attributes (label, color, for_construction) to target shape
+func copy_attributes_to(target: BdgShape, exceptions: Array = []) -> void:
+	if not exceptions.has("label"): target.label = label
+	if not exceptions.has("color"): target._color = _color
+	if not exceptions.has("for_construction"): target.for_construction = for_construction
+
+## Return global location of shape
+func global_location() -> BdgLocation:
+	return location()
+
+## Relocate shape to target location returning a new BdgShape
+func relocate(loc: BdgLocation) -> BdgShape:
+	return located(loc)
+
+## Oriented bounding box (OBB)
+func oriented_bounding_box() -> BdgBoundBox:
+	return bounding_box()
+
+## Topology tree representation as string
+func show_topology() -> String:
+	return "Shape(type=%d, valid=%s, faces=%d, edges=%d, vertices=%d)" % [
+		shape_type(), is_valid(), faces().size(), edges().size(), vertices().size()
+	]
+
+## Convert curves/surfaces to B-splines
+func to_splines() -> BdgShape:
+	return clone()
+
+## Wrap shape into a BdgCompound
+func make_composite() -> BdgCompound:
+	return make_compound_of([self]) as BdgCompound
+
+## Return a BdgShapeList of sub-shapes
+func get_shape_list() -> BdgShapeList:
+	return BdgShapeList.new([self])
+
+## Return single shape
+func get_single_shape() -> BdgShape:
+	return self
+
+## Convert OCCT tessellated shape into a Godot native ArrayMesh
+func to_array_mesh(deflection: float = 0.1) -> ArrayMesh:
+	var mesh := ArrayMesh.new()
+	if is_null():
+		return mesh
+	var tess := tessellate(deflection)
+	if tess.is_empty() or tess.size() < 2:
+		return mesh
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = tess[0] as PackedVector3Array
+	arr[Mesh.ARRAY_INDEX] = tess[1] as PackedInt32Array
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	return mesh
+
+
+## Convert shape into a Godot MeshInstance3D node
+func to_node3d(deflection: float = 0.1) -> MeshInstance3D:
+	var inst := MeshInstance3D.new()
+	inst.mesh = to_array_mesh(deflection)
+	inst.name = label if not label.is_empty() else "BdgShape"
+	return inst
+
 func _to_string() -> String:
 	return "%s(%s)" % [get_script().get_global_name(), _wrapped]
+
 
 # ---------------------------------------------------------------------------
 # OCCT type conversion helpers

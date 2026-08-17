@@ -421,3 +421,62 @@ func _edge_head() -> Vector3:
 func is_manifold() -> bool:
 	return is_closed()
 
+## Stitch degenerate wire edges into a clean wire
+func stitch() -> BdgWire:
+	var es := edges()
+	var clean_es: Array = []
+	for e in es:
+		if e.length() > 1e-6:
+			clean_es.append(e)
+	var wires := combine(clean_es)
+	return wires[0] if not wires.is_empty() else self
+
+## Remove degenerate 0-length edges from wire
+func fix_degenerate_edges() -> BdgWire:
+	return stitch()
+
+## Compute 2D convex hull wire of planar vertices
+static func make_convex_hull(points: Array, plane: BdgPlane = null) -> BdgWire:
+	var pts_2d: Array[Vector2] = []
+	var p := plane if plane != null else BdgPlane.XY
+	for pt in points:
+		var v: Vector3 = pt if pt is Vector3 else pt.center()
+		var loc := p.to_local_coords(v)
+		pts_2d.append(Vector2(loc.x, loc.y))
+	var hull_2d := Geometry2D.convex_hull(pts_2d)
+	var hull_3d: Array = []
+	for p2 in hull_2d:
+		hull_3d.append(p.from_local_coords(Vector3(p2.x, p2.y, 0.0)))
+	return make_polygon(hull_3d, true)
+
+## Order edges for chamfering
+func order_chamfer_edges() -> Array:
+	return order_edges()
+
+## Trim wire to parameter sub-range (0..1)
+func trim(start_param: float, end_param: float) -> BdgWire:
+	var es := edges()
+	if es.is_empty():
+		return self
+	var total_len := length()
+	if total_len == 0.0:
+		return self
+	var cur_dist := 0.0
+	var target_start := start_param * total_len
+	var target_end := end_param * total_len
+	var trimmed_es: Array = []
+	for e in es:
+		var edge := e as BdgEdge
+		var elen: float = edge.length()
+		if cur_dist + elen >= target_start and cur_dist <= target_end:
+			var e_start := clampf((target_start - cur_dist) / elen, 0.0, 1.0)
+			var e_end := clampf((target_end - cur_dist) / elen, 0.0, 1.0)
+			var sub_e: BdgEdge = edge.trim(e_start, e_end)
+			if sub_e != null and not sub_e.is_null():
+				trimmed_es.append(sub_e)
+		cur_dist += elen
+	var wires := combine(trimmed_es)
+	return wires[0] if not wires.is_empty() else self
+
+
+

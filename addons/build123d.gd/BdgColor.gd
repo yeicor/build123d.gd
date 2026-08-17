@@ -59,5 +59,12 @@ func _init(value = null) -> void:
 		push_error("BdgColor: unsupported color value %s" % value)
 		color = Color.WHITE
 
+## Generate a distinct color from categorical palette index
+static func categorical_set(idx: int) -> BdgColor:
+	var palette_keys := _palette.keys()
+	var key: String = palette_keys[posmod(idx, palette_keys.size())]
+	return BdgColor.new(_palette[key])
+
 func _to_string() -> String:
 	return "Color(%s)" % color
+

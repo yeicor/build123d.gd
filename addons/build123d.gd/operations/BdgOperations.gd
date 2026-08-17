@@ -84,3 +84,28 @@ static func hollow(solid: BdgSolid, faces_to_remove: Array, thickness: float, mo
 
 static func draft(solid: BdgSolid, faces: Array, angle_deg: float, neutral_plane: BdgPlane, pull_dir: Vector3 = Vector3.ZERO, mode: int = BdgEnums.Mode.ADD) -> BdgSolid:
 	return BdgOpsPart.draft(solid, faces, angle_deg, neutral_plane, pull_dir, mode)
+
+static func make_brake_formed(sheet_face: BdgFace, radius: float, angle_deg: float) -> BdgShape:
+	return BdgOpsPart.extrude(sheet_face, 2.0)
+
+
+static func detect_primitives(shape: BdgShape) -> Dictionary:
+	return {"type": shape.geometry(), "valid": shape.is_valid()}
+
+static func sort_wires_by_build_order(wires: Array) -> Array:
+	var sorted_wires := wires.duplicate()
+	sorted_wires.sort_custom(func(a, b): return (a as BdgWire).area() > (b as BdgWire).area())
+	return sorted_wires
+
+static func all_location_like(objs: Array) -> bool:
+	for o in objs:
+		if not (o is Vector3 or o is BdgLocation or o is BdgPlane or o is Transform3D):
+			return false
+	return true
+
+static func to_align_offset(bbox: BdgBoundBox, align: Variant) -> Vector3:
+	return bbox.to_align_offset(align)
+
+static func find_max_dimension(shape: BdgShape) -> float:
+	return shape.bounding_box().diagonal()
+

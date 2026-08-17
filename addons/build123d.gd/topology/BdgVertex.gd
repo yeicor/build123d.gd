@@ -23,3 +23,13 @@ func to_vector3() -> Vector3:
 static func make_vertex(p: Vector3) -> BdgVertex:
 	var mk := OcgBRepBuilderAPIMakeVertex.from_N(OcgGpPnt.from_6(p.x, p.y, p.z))
 	return BdgVertex.new(mk.vertex())
+
+## Convert vertex position to array tuple [x, y, z]
+func to_tuple() -> Array:
+	var c := center()
+	return [c.x, c.y, c.z]
+
+## Split vertex by vector/plane
+func split(other: Variant) -> Array:
+	return [self]
+

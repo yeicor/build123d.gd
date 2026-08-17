@@ -77,10 +77,61 @@ func inverted() -> BdgLocation:
 	var inv := _wrapped.inverted()
 	return BdgLocation.new(inv)
 
+## Alias for inverted (Python parity)
+func inverse() -> BdgLocation:
+	return inverted()
+
 ## Combine two locations: self * other
 func multiplied(other: BdgLocation) -> BdgLocation:
 	var result := _wrapped.multiplied(other._wrapped)
 	return BdgLocation.new(result)
 
+## Mirror location across a plane or axis
+func mirror(plane_or_axis: Variant) -> BdgLocation:
+	var t := to_transform3d()
+	if plane_or_axis is BdgPlane:
+		var p: BdgPlane = plane_or_axis
+		var mirrored_pos := p.origin + (t.origin - p.origin) - p.z_dir * (2.0 * p.signed_distance(t.origin))
+		return BdgLocation.new(mirrored_pos, t.basis.get_rotation_quaternion())
+	elif plane_or_axis is BdgAxis:
+		var a: BdgAxis = plane_or_axis
+		var proj := BdgVector.project_to_line(t.origin - a.position, a.direction) + a.position
+		var mirrored_pos := proj + (proj - t.origin)
+		return BdgLocation.new(mirrored_pos, t.basis.get_rotation_quaternion())
+	return self
+
+## Convert location orientation/position to BdgAxis along Z axis
+func to_axis() -> BdgAxis:
+	var t := to_transform3d()
+	return BdgAxis.new(t.origin, t.basis.z.normalized())
+
+## Convert location to array tuple [px, py, pz, qx, qy, qz, qw]
+func to_tuple() -> Array:
+	return [position.x, position.y, position.z, orientation.x, orientation.y, orientation.z, orientation.w]
+
+## Local X axis
+func x_axis() -> BdgAxis:
+	var t := to_transform3d()
+	return BdgAxis.new(t.origin, t.basis.x.normalized())
+
+## Local Y axis
+func y_axis() -> BdgAxis:
+	var t := to_transform3d()
+	return BdgAxis.new(t.origin, t.basis.y.normalized())
+
+## Local Z axis
+func z_axis() -> BdgAxis:
+	var t := to_transform3d()
+	return BdgAxis.new(t.origin, t.basis.z.normalized())
+
+## Center position (alias for position)
+func center() -> Vector3:
+	return position
+
+## Convert to Godot Transform3D
+func to_transform3d() -> Transform3D:
+	return Transform3D(Basis(orientation), position)
+
 func _to_string() -> String:
 	return "Location(position=%s, orientation=%s)" % [position, orientation]
+

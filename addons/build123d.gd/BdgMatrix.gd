@@ -83,6 +83,36 @@ func inverted() -> BdgMatrix:
 	m._wrapped = inv
 	return m
 
+## Alias for inverted (Python parity)
+func inverse() -> BdgMatrix:
+	return inverted()
+
+## Alias for multiplied (Python parity)
+func multiply(other: BdgMatrix) -> BdgMatrix:
+	return multiplied(other)
+
+## Rotate matrix in-place or returning new BdgMatrix around axis
+func rotate(axis_pos_or_dir: Variant, angle_deg: float = 0.0) -> BdgMatrix:
+	var axis_pos := Vector3.ZERO
+	var axis_dir := Vector3.UP
+	if axis_pos_or_dir is BdgAxis:
+		axis_pos = axis_pos_or_dir.position
+		axis_dir = axis_pos_or_dir.direction
+	elif axis_pos_or_dir is Vector3:
+		axis_dir = axis_pos_or_dir
+	var r := BdgMatrix.rotation_about(axis_pos, axis_dir, angle_deg)
+	return r.multiplied(self)
+
+## Return 4x4 matrix values formatted as a transposed 4x4 nested array
+func transposed_list() -> Array:
+	var vals := get_values() # 12 elements (3x4)
+	return [
+		[vals[0], vals[3], vals[6], 0.0],
+		[vals[1], vals[4], vals[7], 0.0],
+		[vals[2], vals[5], vals[8], 0.0],
+		[vals[9], vals[10], vals[11], 1.0],
+	]
+
 ## Apply this transform to a point
 func apply(p: Vector3) -> Vector3:
 	var t := to_transform3d()
@@ -95,3 +125,4 @@ func apply_dir(d: Vector3) -> Vector3:
 
 func _to_string() -> String:
 	return "Matrix(%s)" % _wrapped
+

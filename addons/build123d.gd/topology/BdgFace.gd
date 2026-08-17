@@ -311,3 +311,124 @@ func geometry() -> String:
 		BdgEnums.GeomType.EXTRUSION: return "EXTRUSION"
 		BdgEnums.GeomType.OFFSET: return "OFFSET"
 	return "OTHER"
+
+## Apply 2D chamfer to face outer boundary corners
+func chamfer_2d(dist: float, dist2: float = 0.0, vertices: Array = [], edge: BdgEdge = null) -> BdgFace:
+	var ow := outer_wire()
+	if ow == null:
+		return self
+	var new_w := ow.chamfer_2d(dist, dist2, vertices)
+	return make_from_wires(new_w, inner_wires())
+
+## Apply 2D fillet to face outer boundary corners
+func fillet_2d(radius_val: float, vertices: Array = []) -> BdgFace:
+	var ow := outer_wire()
+	if ow == null:
+		return self
+	var new_w := ow.fillet_2d(radius_val, vertices)
+	return make_from_wires(new_w, inner_wires())
+
+## Area of outer wire face excluding inner holes
+func area_without_holes() -> float:
+	var ow := outer_wire()
+	if ow != null:
+		var f := make_from_wires(ow)
+		if f != null:
+			return f.area()
+	return area()
+
+## Face with inner hole wires removed
+func without_holes() -> BdgFace:
+	var ow := outer_wire()
+	if ow != null:
+		return make_from_wires(ow)
+	return self
+
+## Add inner hole wires to face
+func make_holes(inner_wire_list: Array) -> BdgFace:
+	var ow := outer_wire()
+	if ow != null:
+		var inners := inner_wires() + inner_wire_list
+		return make_from_wires(ow, inners)
+	return self
+
+## Position at normalized UV coordinates (0..1, 0..1)
+func position_at(u: float = 0.5, v: float = 0.5) -> Vector3:
+	return surface_point(u, v)
+
+## Surface normal vector at normalized UV coordinates (0..1, 0..1)
+func normal_at(u: float = 0.5, v: float = 0.5) -> Vector3:
+	var adaptor := OcgBRepAdaptorSurface.from_K(_wrapped, false)
+	var u_min := adaptor.first_u_parameter()
+	var u_max := adaptor.last_u_parameter()
+	var v_min := adaptor.first_v_parameter()
+	var v_max := adaptor.last_v_parameter()
+	var u_val := u_min + clampf(u, 0.0, 1.0) * (u_max - u_min)
+	var v_val := v_min + clampf(v, 0.0, 1.0) * (v_max - v_min)
+	var norm := OcgGpVec.new()
+	var fprops := OcgBRepGPropFace.from_K(_wrapped, false)
+	fprops.normal(u_val, v_val, OcgGpPnt.new(), norm)
+	return BdgShape._gp_vec_to_v3(norm).normalized()
+
+## Location at normalized UV coordinates (0..1, 0..1)
+func location_at(u: float = 0.5, v: float = 0.5) -> BdgLocation:
+	var pos := position_at(u, v)
+	var norm := normal_at(u, v)
+	var b := Basis(to_plane().x_dir, to_plane().y_dir, norm)
+	return BdgLocation.new(pos, b.get_rotation_quaternion())
+
+## Location at center of face
+func center_location() -> BdgLocation:
+	return location_at(0.5, 0.5)
+
+## Check if face is coplanar with another face
+func is_coplanar(other: BdgFace, tol: float = 1e-5) -> bool:
+	if not is_planar() or not other.is_planar():
+		return false
+	var p1 := to_plane()
+	var p2 := other.to_plane()
+	return absf(absf(p1.z_dir.dot(p2.z_dir)) - 1.0) < tol and p1.distance(p2.origin) < tol
+
+## Check if 3D point lies inside planar face
+func is_inside(point: Vector3, tol: float = 1e-5) -> bool:
+	if not is_planar():
+		return false
+	var p := to_plane()
+	if p.distance(point) > tol:
+		return false
+	var loc_2d := p.to_local_coords(point)
+	var poly: Array[Vector2] = []
+	for v in outer_wire().vertices():
+		var l2d := p.to_local_coords(v.center())
+		poly.append(Vector2(l2d.x, l2d.y))
+	return Geometry2D.is_point_in_polygon(Vector2(loc_2d.x, loc_2d.y), poly)
+
+## Radius of underlying cylinder/sphere/torus
+func radius() -> float:
+	var adaptor := OcgBRepAdaptorSurface.from_K(_wrapped, false)
+	var t := adaptor.get_type()
+	if t == OcgEnums.GeomAbs_SurfaceType.GeomAbs_Cylinder:
+		return adaptor.cylinder().radius()
+	elif t == OcgEnums.GeomAbs_SurfaceType.GeomAbs_Sphere:
+		return adaptor.sphere().radius()
+	return 0.0
+
+## Width of bounding box in face plane
+func width() -> float:
+	return bounding_box().size().x
+
+## Length of bounding box in face plane
+func length() -> float:
+	return bounding_box().size().y
+
+## Sew an array of faces into a shell
+static func sew_faces(face_list: Array) -> BdgShell:
+	var sewing := OcgBRepBuilderAPISewing.new()
+	for f in face_list:
+		if f is BdgShape and not f.is_null():
+			sewing.add(f._wrapped)
+	sewing.perform(OcgMessageProgressRange.new())
+	var sh := sewing.sewed_shape()
+	return BdgShell.new(sh)
+
+

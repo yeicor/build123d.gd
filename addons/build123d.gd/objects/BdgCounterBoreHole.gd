@@ -16,24 +16,15 @@ func _init(...args) -> void:
 		return
 
 	radius = float(args[0])
-	counter_bore_radius = float(args[1])
-	counter_bore_depth = float(args[2])
-	depth = 100.0
-	var md: int = BdgEnums.Mode.SUBTRACT
-
-	if args.size() > 3 and args[3] != null:
-		if args[3] is int and args.size() == 4:
-			md = int(args[3])
-		else:
-			depth = float(args[3])
-
-	if args.size() > 4 and args[4] != null:
-		md = int(args[4])
+	depth = float(args[1])
+	counter_bore_radius = float(args[2])
+	counter_bore_depth = float(args[3]) if args.size() > 3 else 5.0
+	var md: int = int(args[4]) if args.size() > 4 and args[4] != null else BdgEnums.Mode.SUBTRACT
 
 	# Counterbore top flush at Z=0 extending down to -counter_bore_depth
 	var cb_hole := BdgSolid.make_cylinder(counter_bore_radius, counter_bore_depth).translate(Vector3(0, 0, -counter_bore_depth))
 	# Shaft hole extending from Z=0 down to -depth
 	var shaft_hole := BdgSolid.make_cylinder(radius, depth).translate(Vector3(0, 0, -depth))
 	var solid := cb_hole.fuse(shaft_hole)
+	_from_solid(solid, Vector3.ZERO, BdgEnums.Align.NONE, md)
 
-	_wrapped = solid.wrapped()

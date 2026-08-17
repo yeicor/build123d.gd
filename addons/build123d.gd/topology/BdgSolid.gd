@@ -232,6 +232,36 @@ static func make_loft(objs: Array, ruled: bool = false, as_solid: bool = true) -
 		return null
 	return result if result is BdgSolid else (result as BdgSolid)
 
+## Construct a solid from a bounding box
+static func from_bounding_box(bbox: BdgBoundBox) -> BdgSolid:
+	var sz := bbox.size()
+	var pl := BdgPlane.new(bbox.min, Vector3.RIGHT, Vector3.BACK)
+	return make_box(sz.x, sz.y, sz.z, pl)
+
+## Extrude solid / face into 3D solid by distance or direction
+func extrude_amount(amount: float, dir: Vector3 = Vector3.ZERO) -> BdgShape:
+	return BdgOperations.extrude(self, amount, dir)
+
+func extrude(direction: Vector3) -> BdgShape:
+	return BdgOperations.extrude(self, direction.length(), direction.normalized())
+
+## Extrude with draft taper angle
+func extrude_taper(amount: float, taper_deg: float) -> BdgShape:
+	return BdgOperations.extrude(self, amount, Vector3.ZERO, false, taper_deg)
+
+## Revolve solid around an axis
+func revolve(angle_deg: float = 360.0, axis: BdgAxis = null) -> BdgShape:
+	return BdgOperations.revolve(self, angle_deg, axis)
+
+## Sweep solid along a path wire
+func sweep(spine: BdgWire, aux_spines: Array = [], is_frenet: bool = false) -> BdgShape:
+	return BdgOperations.sweep(self, spine)
+
+
+## Thicken solid walls by amount
+func thicken(amount: float) -> BdgSolid:
+	return hollow([], amount)
+
 static func _first_ancestor_face(map: RefCounted, edge: OcgTopoDSEdge) -> OcgTopoDSFace:
 	var value := OcgNCollectionListTopoDSShape.new()
 	if map.find_from_key_d(edge, value):
