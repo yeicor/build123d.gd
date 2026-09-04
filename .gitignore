@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+/exports/
 
 # OCCT GDExtension binaries (downloaded/copied at setup; too large for git)
 addons/OpenCASCADE.gd/*.so
