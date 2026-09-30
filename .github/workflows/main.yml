@@ -40,6 +40,10 @@ jobs:
           version: '4.7.1'
           use-dotnet: false
 
+      - name: Initialize Godot Project and Class Cache
+        run: |
+          godot --headless --editor --quit
+
       - name: Run Showcase Example Parity Tests
         run: |
           godot --headless --script tests/test_examples.gd
@@ -78,20 +82,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tools/download_addon.sh --triplet ${{ matrix.target.triplet }}
+          tools/download_addon.sh --triplet ${{ matrix.target.triplet }} --mode ${{ matrix.mode }}
 
       - name: Download Linux x64 host artifact for cross-platform exports
-        # When exporting for a non-Linux target on an Ubuntu runner (e.g. iOS,
-        # Android, Web), the Godot editor needs the Linux x86_64 .so to load
-        # the GDExtension at editor start-up so that OCG class types are known
-        # during PCK generation. Android exports tolerate missing types (script
-        # errors are non-fatal), but iOS export fails hard on parse errors.
-        if: runner.os == 'Linux' && matrix.target.triplet != 'x64-linux'
+        # When exporting for iOS on an Ubuntu runner, the Godot editor needs the Linux x86_64 .so
+        # to load the GDExtension at editor start-up so that OCG class types are known
+        # during PCK generation. iOS export fails hard on parse errors.
+        if: matrix.target.triplet == 'arm64-ios' && runner.os == 'Linux'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tools/download_addon.sh --triplet x64-linux
+          tools/download_addon.sh --triplet x64-linux --mode debug
 
       - name: Setup Android NDK
         if: contains(matrix.target.triplet, '-android')
@@ -108,16 +110,22 @@ jobs:
           echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
 
       - name: Setup Android keystore
-        if: contains(matrix.target.triplet, '-android') && matrix.mode == 'release'
+        if: contains(matrix.target.triplet, '-android')
         shell: bash
         run: |
           set -e
           sudo apt-get update
           sudo apt-get install -y openjdk-17-jdk
-          keytool -genkeypair -v -storetype PKCS12 -keystore ${{ github.workspace }}/android_keystore.p12 -alias androidkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"
-          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=${{ github.workspace }}/android_keystore.p12" >> $GITHUB_ENV
-          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=androidkey" >> $GITHUB_ENV
-          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=android" >> $GITHUB_ENV
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          fi
+          if [ "${{ matrix.mode }}" = "release" ]; then
+            keytool -genkeypair -v -storetype PKCS12 -keystore ${{ github.workspace }}/android_keystore.p12 -alias androidkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=${{ github.workspace }}/android_keystore.p12" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=androidkey" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=android" >> $GITHUB_ENV
+          fi
 
       - name: Setup Godot Engine
         uses: chickensoft-games/setup-godot@v2
@@ -135,6 +143,10 @@ jobs:
         run: |
           tools/download_addon.sh --web-templates
           ls -R templates/
+
+      - name: Initialize Godot Project and Class Cache
+        run: |
+          godot --headless --editor --quit
 
       - name: Export project
         shell: bash

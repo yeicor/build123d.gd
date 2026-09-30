@@ -31,11 +31,16 @@ DOWNLOAD_HOST=false
 DOWNLOAD_WEB_TEMPLATES=false
 DOWNLOAD_WEB_EDITOR=false
 TARGET_TRIPLET=""
+TARGET_MODE=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --triplet)
             TARGET_TRIPLET="$2"
+            shift 2
+            ;;
+        --mode)
+            TARGET_MODE="$2"
             shift 2
             ;;
         --all)
@@ -174,10 +179,13 @@ download_and_extract_artifact() {
             cp -f "$f" "$target_dir/"
         done
         echo "  Installed files from $pattern to $target_dir"
+        rm -rf "$tmp"
+        return 0
     else
         echo "Warning: Could not download artifact matching pattern: $pattern" >&2
+        rm -rf "$tmp"
+        return 1
     fi
-    rm -rf "$tmp"
 }
 
 # Download libraries
@@ -185,8 +193,16 @@ if [ "$DOWNLOAD_ALL" = true ]; then
     echo "Downloading all platform binaries..."
     download_and_extract_artifact "gdext-*" "$DEST"
 elif [ -n "$TARGET_TRIPLET" ]; then
-    echo "Downloading binaries for triplet: $TARGET_TRIPLET..."
-    download_and_extract_artifact "gdext-${TARGET_TRIPLET}-*" "$DEST"
+    if [ -n "$TARGET_MODE" ]; then
+        echo "Downloading binaries for triplet: $TARGET_TRIPLET ($TARGET_MODE single-precision)..."
+        if ! download_and_extract_artifact "gdext-${TARGET_TRIPLET}-template_${TARGET_MODE}-single-*" "$DEST"; then
+            echo "Falling back to all artifacts for triplet: $TARGET_TRIPLET..."
+            download_and_extract_artifact "gdext-${TARGET_TRIPLET}-*" "$DEST"
+        fi
+    else
+        echo "Downloading binaries for triplet: $TARGET_TRIPLET..."
+        download_and_extract_artifact "gdext-${TARGET_TRIPLET}-*" "$DEST"
+    fi
 fi
 
 # Download custom web templates if requested

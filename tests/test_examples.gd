@@ -22,6 +22,11 @@ func _init() -> void:
 	var examples: Array = BdgExampleRegistry.get_examples()
 	print("Testing %d registered showcase examples..." % examples.size())
 
+	if examples.is_empty():
+		printerr("[ERROR] No showcase examples found or loaded! (Check .godot/global_script_class_cache.cfg indexing)")
+		quit(1)
+		return
+
 	var total_passed := 0
 	var total_failed := 0
 
@@ -127,4 +132,9 @@ func _init() -> void:
 	print("\n==================================================")
 	print("Summary: %d Passed, %d Failed" % [total_passed, total_failed])
 	print("==================================================")
-	quit(0 if total_failed == 0 else 1)
+	if total_failed == 0 and total_passed > 0:
+		print("All showcase parity tests passed successfully!")
+		quit(0)
+	else:
+		printerr("[ERROR] Showcase tests failed! Passed: %d, Failed: %d" % [total_passed, total_failed])
+		quit(1)
