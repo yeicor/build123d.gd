@@ -1,0 +1,249 @@
+name: CI & CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: false
+
+      - name: Download OpenCASCADE.gd host addon binary
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools/download_addon.sh --host
+
+      - name: Setup Godot Engine
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: '4.7.1'
+          use-dotnet: false
+
+      - name: Run Showcase Example Parity Tests
+        run: |
+          godot --headless --script tests/test_examples.gd
+
+  export:
+    needs: [test]
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          [
+            { triplet: x64-linux, preset: "Linux x86_64", os: ubuntu-24.04 },
+            { triplet: x86-linux, preset: "Linux x86_32", os: ubuntu-24.04 },
+            { triplet: arm64-linux, preset: "Linux arm64", os: ubuntu-24.04-arm },
+            { triplet: arm-linux, preset: "Linux arm32", os: ubuntu-24.04-arm },
+            { triplet: x64-windows-static, preset: "Windows x86_64", os: windows-2025-vs2026 },
+            { triplet: x86-windows-static, preset: "Windows x86_32", os: windows-2025-vs2026 },
+            { triplet: arm64-windows-static, preset: "Windows arm64", os: windows-2025-vs2026 },
+            { triplet: universal-osx, preset: "macOS universal", os: macos-15 },
+            { triplet: wasm32-emscripten, preset: "Web", os: ubuntu-24.04 },
+            { triplet: arm64-android, preset: "Android arm64", os: ubuntu-24.04 },
+            { triplet: arm-neon-android, preset: "Android arm32", os: ubuntu-24.04 },
+            { triplet: x64-android, preset: "Android x86_64", os: ubuntu-24.04 },
+            { triplet: x86-android, preset: "Android x86_32", os: ubuntu-24.04 },
+            { triplet: arm64-ios, preset: "iOS arm64", os: ubuntu-24.04 },
+          ]
+        mode: [debug, release]
+    runs-on: ${{ matrix.target.os }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download addon artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools/download_addon.sh --triplet ${{ matrix.target.triplet }}
+
+      - name: Download Linux x64 host artifact for cross-platform exports
+        # When exporting for a non-Linux target on an Ubuntu runner (e.g. iOS,
+        # Android, Web), the Godot editor needs the Linux x86_64 .so to load
+        # the GDExtension at editor start-up so that OCG class types are known
+        # during PCK generation. Android exports tolerate missing types (script
+        # errors are non-fatal), but iOS export fails hard on parse errors.
+        if: runner.os == 'Linux' && matrix.target.triplet != 'x64-linux'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools/download_addon.sh --triplet x64-linux
+
+      - name: Setup Android NDK
+        if: contains(matrix.target.triplet, '-android')
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28b
+
+      - name: Set Android NDK path
+        if: contains(matrix.target.triplet, '-android')
+        shell: bash
+        run: |
+          set -e
+          echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+
+      - name: Setup Android keystore
+        if: contains(matrix.target.triplet, '-android') && matrix.mode == 'release'
+        shell: bash
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk
+          keytool -genkeypair -v -storetype PKCS12 -keystore ${{ github.workspace }}/android_keystore.p12 -alias androidkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=${{ github.workspace }}/android_keystore.p12" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=androidkey" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=android" >> $GITHUB_ENV
+
+      - name: Setup Godot Engine
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: '4.7.1'
+          use-dotnet: false
+          include-templates: true
+          cache: false
+
+      - name: Install custom web templates
+        if: contains(matrix.target.triplet, 'wasm32-emscripten')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools/download_addon.sh --web-templates
+          ls -R templates/
+
+      - name: Export project
+        shell: bash
+        run: |
+          set -e
+          mkdir -p exports
+          godot --export-${{ matrix.mode }} "${{ matrix.target.preset }}" --headless
+
+      - name: Build artifact name
+        id: artifact-name
+        shell: bash
+        run: |
+          EXPORT_NAME=$(echo "${{ matrix.target.preset }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          echo "name=build123d-${EXPORT_NAME}-${{ matrix.mode }}" >> $GITHUB_OUTPUT
+
+      - name: Upload export artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          retention-days: ${{ github.event_name == 'pull_request' && 2 || 14 }}
+          path: exports/**
+
+  deploy-pages:
+    runs-on: ubuntu-24.04
+    needs: export
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && github.event_name != 'pull_request'
+    permissions:
+      actions: read
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download web export artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: build123d-web-release
+          path: web
+
+      - name: Download web addon artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools/download_addon.sh --triplet wasm32-emscripten --web-editor
+
+      - name: Copy GDExtension .so files as static files
+        run: |
+          set -e
+          mkdir -p web/editor/
+          cp addons/OpenCASCADE.gd/libgdext.web.debug.template_debug.wasm32.so web/editor/ 2>/dev/null || true
+          cp addons/OpenCASCADE.gd/libgdext.web.release.template_release.wasm32.so web/editor/ 2>/dev/null || true
+          if [ ! -f "web/editor/libgdext.web.debug.template_debug.wasm32.so" ] && [ -f "web/editor/libgdext.web.release.template_release.wasm32.so" ]; then
+            cp web/editor/libgdext.web.release.template_release.wasm32.so web/editor/libgdext.web.debug.template_debug.wasm32.so
+          fi
+
+      - name: Download JSZip for preload script
+        run: curl -sL "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" -o web/editor/jszip.min.js
+
+      - name: Create preload.zip
+        shell: bash
+        run: |
+          set -e
+          # Exclude platform binaries (served as static files), import cache, build artifacts
+          zip -qr web/editor/preload.zip . \
+            -x 'exports/*' 'templates/*' \
+            '.godot/*' '.git/*' '.github/*' \
+            '__pycache__/*' '**/__pycache__/*' \
+            'addons/*/libgdext.*' 'web/*'
+          ls -lh web/editor/preload.zip
+
+      - name: Patch editor HTML with project preload
+        run: tools/patch_editor_html.sh web/editor/godot.editor.html tools/web_editor_preload.html
+
+      - name: Add coi-serviceworker for SharedArrayBuffer (threads)
+        shell: bash
+        run: |
+          set -e
+          cp tools/coi-serviceworker.js web/coi-serviceworker.js
+          cp tools/coi-serviceworker.js web/editor/coi-serviceworker.js
+
+      - name: Inject COI service worker into exported demo
+        shell: bash
+        run: |
+          set -e
+          for html_file in web/Build123d.gd.html web/gdext-tests.html; do
+            if [ -f "$html_file" ]; then
+              if grep -q 'coi-serviceworker.js' "$html_file"; then
+                echo "coi-serviceworker already injected in $html_file"
+              else
+                sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' "$html_file"
+                echo "Injected coi-serviceworker into $html_file"
+              fi
+              if [ ! -f "web/index.html" ]; then
+                cp "$html_file" web/index.html
+              fi
+            fi
+          done
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

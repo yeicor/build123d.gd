@@ -164,10 +164,8 @@ static func artifact_name_for_key(key: String) -> String:
 	var parts := key.split(".")
 	var target_type := "template_debug" if parts.has("debug") else "template_release"
 	var precision := parts[parts.size() - 1]
-	var name := "gdext-%s-%s-%s" % [triplet, target_type, precision]
-	if parts.has("threads"):
-		name += "-on"
-	return name
+	var suffix := "-on" if parts.has("threads") else "-"
+	return "gdext-%s-%s-%s%s" % [triplet, target_type, precision, suffix]
 
 
 static func format_bytes(bytes: int) -> String:
@@ -380,9 +378,12 @@ static func list_artifacts(names: PackedStringArray) -> Dictionary:
 			break
 		for art in page_artifacts:
 			if art is Dictionary:
-				var name := String(art.get("name", ""))
-				if wanted.has(name) and not found.has(name) and not art.get("expired", false):
-					found[name] = art
+				var art_name := String(art.get("name", ""))
+				if art.get("expired", false):
+					continue
+				for w in wanted:
+					if not found.has(w) and (art_name == w or art_name.trim_suffix("-") == String(w).trim_suffix("-")):
+						found[w] = art
 		if found.size() >= wanted.size():
 			break
 	return {"ok": true, "artifacts": found}
