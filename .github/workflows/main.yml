@@ -74,6 +74,13 @@ jobs:
     runs-on: ${{ matrix.target.os }}
     timeout-minutes: 20
     steps:
+      - name: Free disk space
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v6
 
@@ -109,13 +116,18 @@ jobs:
           set -e
           echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
 
+      - name: Setup Java
+        if: contains(matrix.target.triplet, '-android')
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Setup Android keystore
         if: contains(matrix.target.triplet, '-android')
         shell: bash
         run: |
           set -e
-          sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk
           mkdir -p ~/.android
           if [ ! -f ~/.android/debug.keystore ]; then
             keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
