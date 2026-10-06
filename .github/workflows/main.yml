@@ -89,16 +89,15 @@ jobs:
         run: |
           tools/download_addon.sh --triplet ${{ matrix.target.triplet }} --mode ${{ matrix.mode }}
 
-      - name: Download Linux x64 host artifact for cross-platform exports
-        # When exporting for iOS on an Ubuntu runner, the Godot editor needs the Linux x86_64 .so
-        # to load the GDExtension at editor start-up so that OCG class types are known
-        # during PCK generation. iOS export fails hard on parse errors.
-        if: matrix.target.triplet == 'arm64-ios' && runner.os == 'Linux'
+      - name: Download host addon binary for editor class cache initialization
+        # The Godot editor is always a debug build running on the host runner.
+        # It needs the host platform's debug GDExtension library at startup
+        # so that OCG class types are loaded when generating the class cache.
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tools/download_addon.sh --triplet x64-linux --mode debug
+          tools/download_addon.sh --host --mode debug
 
       - name: Setup Android NDK
         if: contains(matrix.target.triplet, '-android')

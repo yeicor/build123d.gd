@@ -126,19 +126,28 @@ mkdir -p "$DEST"
 if [ -z "$RUN_ID" ]; then
     echo "Finding latest successful run of $REPO..."
     if command -v gh >/dev/null 2>&1; then
-        RUN_ID=$(gh run list --repo "$REPO" --workflow .github/workflows/main.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+        for attempt in 1 2 3; do
+            RUN_ID=$(gh run list --repo "$REPO" --workflow .github/workflows/main.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+            if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
+                break
+            fi
+            sleep 2
+        done
+        if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            RUN_ID=$(gh run list --repo "$REPO" --workflow .github/workflows/main.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+        fi
+    else
+        echo "Error: gh CLI is required but not installed." >&2
+        exit 1
     fi
-    if [ -z "$RUN_ID" ]; then
-        RUN_ID=$(curl -s "https://api.github.com/repos/${REPO}/actions/runs?branch=main&status=success&per_page=1" | grep -m1 '"id":' | sed -E 's/[^0-9]//g')
-    fi
-    if [ -z "$RUN_ID" ]; then
+    if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
         echo "Error: Could not find latest successful run for $REPO" >&2
         exit 1
     fi
 fi
 echo "Using OpenCASCADE.gd run ID: $RUN_ID"
 
-# Helper to download artifact with gh CLI or nightly.link
+# Helper to download artifact with gh CLI
 download_and_extract_artifact() {
     local pattern="$1"
     local target_dir="$2"
@@ -147,26 +156,15 @@ download_and_extract_artifact() {
 
     local downloaded=false
     if command -v gh >/dev/null 2>&1; then
-        if gh run download "$RUN_ID" --repo "$REPO" --pattern "$pattern" --dir "$tmp" 2>/dev/null; then
-            downloaded=true
-        fi
-    fi
-
-    if [ "$downloaded" = false ]; then
-        echo "Using nightly.link fallback for pattern: $pattern..."
-        # Query artifact ID from GitHub API
-        local art_json
-        art_json=$(curl -s "https://api.github.com/repos/${REPO}/actions/runs/${RUN_ID}/artifacts?per_page=100")
-        # Match name against pattern (simple prefix / wildcard match)
-        local pattern_regex
-        pattern_regex=$(echo "$pattern" | sed 's/\*/.*/g')
-        local art_id
-        art_id=$(echo "$art_json" | jq -r ".artifacts[] | select(.name | test(\"^${pattern_regex}$\")) | .id" | head -n 1)
-        if [ -n "$art_id" ] && [ "$art_id" != "null" ]; then
-            local zip_file="${tmp}/artifact.zip"
-            if curl -sL "https://nightly.link/${REPO}/actions/artifacts/${art_id}.zip" -o "$zip_file"; then
-                unzip -q -o "$zip_file" -d "$tmp"
-                rm -f "$zip_file"
+        for attempt in 1 2 3; do
+            if gh run download "$RUN_ID" --repo "$REPO" --pattern "$pattern" --dir "$tmp" 2>/dev/null; then
+                downloaded=true
+                break
+            fi
+            sleep 2
+        done
+        if [ "$downloaded" = false ]; then
+            if gh run download "$RUN_ID" --repo "$REPO" --pattern "$pattern" --dir "$tmp"; then
                 downloaded=true
             fi
         fi
@@ -182,7 +180,7 @@ download_and_extract_artifact() {
         rm -rf "$tmp"
         return 0
     else
-        echo "Warning: Could not download artifact matching pattern: $pattern" >&2
+        echo "Error: Could not download artifact matching pattern: $pattern" >&2
         rm -rf "$tmp"
         return 1
     fi
