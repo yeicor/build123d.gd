@@ -19,6 +19,22 @@ func _init() -> void:
 		print("[WARNING] 'uvx' command not found in PATH. Skipping live Python reference metric comparison.")
 		print("To run Python reference parity tests, install uv: curl -LsSf https://astral.sh/uv/install.sh | sh")
 
+	print("Validating that all scripts load without compilation errors...")
+	var all_scripts: Array = []
+	_find_scripts("res://addons/build123d.gd", all_scripts)
+	_find_scripts("res://demo", all_scripts)
+	var load_errors := 0
+	for s_path in all_scripts:
+		var script = load(s_path)
+		if script == null:
+			printerr("[ERROR] Failed to load/compile script: ", s_path)
+			load_errors += 1
+	if load_errors > 0:
+		printerr("[ERROR] %d scripts failed compilation!" % load_errors)
+		quit(1)
+		return
+	print("All %d scripts compiled and loaded successfully." % all_scripts.size())
+
 	var examples: Array = BdgExampleRegistry.get_examples()
 	print("Testing %d registered showcase examples..." % examples.size())
 
@@ -138,3 +154,19 @@ func _init() -> void:
 	else:
 		printerr("[ERROR] Showcase tests failed! Passed: %d, Failed: %d" % [total_passed, total_failed])
 		quit(1)
+
+static func _find_scripts(path: String, out: Array) -> void:
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return
+	dir.list_dir_begin()
+	var name := dir.get_next()
+	while name != "":
+		if name != "." and name != ".." and not name.begins_with("."):
+			var full_path := path.path_join(name)
+			if dir.current_is_dir():
+				_find_scripts(full_path, out)
+			elif name.ends_with(".gd"):
+				out.append(full_path)
+		name = dir.get_next()
+	dir.list_dir_end()

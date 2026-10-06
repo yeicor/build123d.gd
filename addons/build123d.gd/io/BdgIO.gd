@@ -85,7 +85,7 @@ static func import_step(path: String) -> BdgShape:
 	reader.set_color_mode(true)
 	reader.set_layer_mode(true)
 	var global_path := ProjectSettings.globalize_path(path)
-	var ok := reader.perform_t(OcgTCollectionAsciiString.from_a(global_path), doc, OcgMessageProgressRange.new())
+	var ok := reader.perform_D(global_path, doc, OcgMessageProgressRange.new())
 	if not ok:
 		push_error("BdgIO.import_step: failed to read %s" % path)
 		return null
